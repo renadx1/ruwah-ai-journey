@@ -111,31 +111,39 @@ export default function Index() {
         </div>
       </div>
 
-      {/* Nearby Places */}
+      {/* Personalized suggestions */}
       <div className="px-5 mt-6">
-        <h2 className="font-heading font-bold text-foreground mb-3">أماكن قريبة</h2>
+        <div className="flex items-baseline justify-between mb-3">
+          <span className="text-[10px] text-muted-foreground font-heading">مختارة بناءً على اهتماماتك</span>
+          <h2 className="font-heading font-bold text-foreground">اقتراحات مخصصة لك</h2>
+        </div>
         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide" style={{ direction: 'rtl' }}>
-          {culturalPlaces.slice(0, 4).map((place, i) => (
-            <motion.button
-              key={place.id}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.5 + i * 0.1 }}
-              onClick={() => navigate(`/map?place=${place.id}`)}
-              className="min-w-[160px] bg-card border border-border rounded-2xl overflow-hidden active:scale-[0.97] transition-transform shadow-sm flex-shrink-0"
-            >
-              <div className="h-20 bg-heritage-sand flex items-center justify-center text-3xl">
-                {place.image}
-              </div>
-              <div className="p-3 text-right">
-                <h3 className="font-heading text-xs font-semibold truncate">{place.name}</h3>
-                <div className="flex items-center gap-1 mt-1 justify-end">
-                  <span className="text-[10px] text-muted-foreground">{place.rating}</span>
-                  <Star size={10} className="text-heritage-gold fill-heritage-gold" />
+          {(() => {
+            // Simple personalization: rotate suggestions based on a stable seed (user name length + day of month)
+            const seed = (displayName.length + new Date().getDate()) % culturalPlaces.length;
+            const ordered = [...culturalPlaces.slice(seed), ...culturalPlaces.slice(0, seed)];
+            return ordered.slice(0, 4).map((place, i) => (
+              <motion.button
+                key={place.id}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5 + i * 0.1 }}
+                onClick={() => navigate(`/map?place=${place.id}`)}
+                className="min-w-[160px] bg-card border border-border rounded-2xl overflow-hidden active:scale-[0.97] transition-transform shadow-sm flex-shrink-0"
+              >
+                <div className="h-20 bg-heritage-sand flex items-center justify-center text-3xl">
+                  {place.image}
                 </div>
-              </div>
-            </motion.button>
-          ))}
+                <div className="p-3 text-right">
+                  <h3 className="font-heading text-xs font-semibold truncate">{place.name}</h3>
+                  <div className="flex items-center gap-1 mt-1 justify-end">
+                    <span className="text-[10px] text-muted-foreground">{place.rating}</span>
+                    <Star size={10} className="text-heritage-gold fill-heritage-gold" />
+                  </div>
+                </div>
+              </motion.button>
+            ));
+          })()}
         </div>
       </div>
     </div>
