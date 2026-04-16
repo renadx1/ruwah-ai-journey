@@ -1,4 +1,4 @@
-import { Home, Map, BookOpen, User, Compass } from 'lucide-react';
+import { Home, Map, BookOpen, User, LifeBuoy } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
@@ -9,7 +9,7 @@ const sideTabs = [
   { path: '/rawi', icon: BookOpen, label: 'الراوي' },
   // Left side
   { path: '/map', icon: Map, label: 'الخريطة' },
-  { path: '/explore', icon: Compass, label: 'استكشف' },
+  { path: '/support', icon: LifeBuoy, label: 'الدعم' },
 ];
 
 export default function BottomNav() {
@@ -28,11 +28,11 @@ export default function BottomNav() {
         <tab.icon
           size={22}
           strokeWidth={1.6}
-          className={`transition-colors ${active ? 'text-primary' : 'text-heritage-brown/70 group-active:text-heritage-brown'}`}
+          className={`transition-colors ${active ? 'text-heritage-brown' : 'text-heritage-brown/60 group-active:text-heritage-brown'}`}
         />
         <span
           className={`text-[10px] font-heading transition-colors ${
-            active ? 'text-primary font-semibold' : 'text-heritage-brown/70'
+            active ? 'text-heritage-brown font-semibold' : 'text-heritage-brown/60'
           }`}
         >
           {tab.label}
@@ -90,7 +90,7 @@ export default function BottomNav() {
           </div>
         </div>
 
-        {/* Center elevated Home button */}
+        {/* Center elevated Home button — fixed in the middle */}
         <motion.button
           onClick={() => navigate('/')}
           whileTap={{ scale: 0.92 }}
@@ -98,13 +98,13 @@ export default function BottomNav() {
           aria-label="الرئيسية"
         >
           <div
-            className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg ring-4 ring-background ${
-              homeActive ? 'bg-gradient-to-br from-primary to-heritage-brown' : 'bg-gradient-to-br from-heritage-brown to-primary'
+            className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg ring-4 ring-background bg-gradient-to-br from-heritage-brown to-primary transition-transform ${
+              homeActive ? 'scale-105' : ''
             }`}
           >
             <Home size={26} strokeWidth={1.8} className="text-primary-foreground" />
           </div>
-          <span className="block text-center text-[10px] font-heading font-semibold text-heritage-brown mt-1">
+          <span className={`block text-center text-[10px] font-heading mt-1 ${homeActive ? 'font-bold text-heritage-brown' : 'font-semibold text-heritage-brown/80'}`}>
             الرئيسية
           </span>
         </motion.button>
