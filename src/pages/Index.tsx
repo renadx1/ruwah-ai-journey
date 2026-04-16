@@ -13,7 +13,7 @@ export default function Index() {
   const displayName = name || 'ضيفنا';
 
   return (
-    <div className="min-h-screen pb-24 heritage-pattern">
+    <div className="min-h-screen pb-32 najdi-pattern">
       {/* Header */}
       <div className="gradient-heritage px-5 pt-12 pb-8 rounded-b-3xl">
         <div className="flex items-center justify-between mb-6">
@@ -90,22 +90,22 @@ export default function Index() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            onClick={() => navigate('/learn')}
+            onClick={() => navigate('/rawi')}
             className="bg-card border border-border rounded-2xl p-4 text-right active:scale-[0.97] transition-transform shadow-sm"
           >
-            <span className="text-3xl">📚</span>
-            <h3 className="font-heading font-semibold text-sm mt-2">تعلّم</h3>
-            <p className="text-muted-foreground text-[11px] mt-1">ثقافة وتراث</p>
+            <span className="text-3xl grayscale-[60%]">📚</span>
+            <h3 className="font-heading font-semibold text-sm mt-2 text-heritage-brown">الراوي</h3>
+            <p className="text-muted-foreground text-[11px] mt-1">تعلّم وحوار ذكي</p>
           </motion.button>
           <motion.button
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            onClick={() => navigate('/chat')}
+            onClick={() => navigate('/rawi?tab=chat')}
             className="bg-card border border-border rounded-2xl p-4 text-right active:scale-[0.97] transition-transform shadow-sm"
           >
-            <span className="text-3xl">🤖</span>
-            <h3 className="font-heading font-semibold text-sm mt-2">اسأل الذكاء</h3>
+            <span className="text-3xl grayscale-[60%]">💬</span>
+            <h3 className="font-heading font-semibold text-sm mt-2 text-heritage-brown">حدّث الراوي</h3>
             <p className="text-muted-foreground text-[11px] mt-1">محادثة ذكية</p>
           </motion.button>
         </div>

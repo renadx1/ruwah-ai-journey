@@ -1,13 +1,12 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import BottomNav from "@/components/BottomNav";
 import Index from "./pages/Index";
 import MapPage from "./pages/MapPage";
-import LearnPage from "./pages/LearnPage";
-import ChatPage from "./pages/ChatPage";
+import RawiPage from "./pages/RawiPage";
 import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 
@@ -23,8 +22,11 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/map" element={<MapPage />} />
-            <Route path="/learn" element={<LearnPage />} />
-            <Route path="/chat" element={<ChatPage />} />
+            <Route path="/rawi" element={<RawiPage />} />
+            {/* Legacy redirects */}
+            <Route path="/learn" element={<Navigate to="/rawi" replace />} />
+            <Route path="/chat" element={<Navigate to="/rawi?tab=chat" replace />} />
+            <Route path="/explore" element={<Navigate to="/map" replace />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

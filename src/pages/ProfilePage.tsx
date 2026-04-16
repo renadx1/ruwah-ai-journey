@@ -17,7 +17,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen pb-24 heritage-pattern">
+    <div className="min-h-screen pb-32 najdi-pattern">
       <div className="gradient-heritage px-5 pt-12 pb-10 rounded-b-3xl">
         <div className="flex items-center justify-between mb-6">
           <div />
