@@ -13,7 +13,7 @@ export default function Index() {
   const displayName = name || 'ضيفنا';
 
   return (
-    <div className="min-h-screen pb-24 heritage-pattern">
+    <div className="min-h-screen pb-32 najdi-pattern">
       {/* Header */}
       <div className="gradient-heritage px-5 pt-12 pb-8 rounded-b-3xl">
         <div className="flex items-center justify-between mb-6">
