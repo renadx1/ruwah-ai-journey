@@ -60,29 +60,8 @@ export default function Index() {
         </motion.div>
       </div>
 
-      {/* 1) Map preview — directly after points */}
-      <div className="px-5 mt-6">
-        <h2 className="font-heading font-bold text-heritage-brown mb-3 text-right">الخريطة</h2>
-        <motion.button
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          onClick={() => navigate('/map')}
-          className="w-full bg-card rounded-2xl overflow-hidden shadow-md border border-border active:scale-[0.98] transition-transform"
-        >
-          <div className="h-32 bg-heritage-sand relative flex items-center justify-center najdi-pattern-strong">
-            <div className="relative z-10 flex flex-col items-center gap-2">
-              <MapPin size={28} className="text-heritage-brown" strokeWidth={1.7} />
-              <span className="text-heritage-brown font-heading text-sm font-semibold">
-                {location.city}
-              </span>
-            </div>
-          </div>
-          <div className="p-3 flex items-center justify-between">
-            <ChevronLeft size={16} className="text-muted-foreground" />
-            <span className="text-muted-foreground text-xs font-heading">استكشف الخريطة</span>
-          </div>
-        </motion.button>
-      </div>
+      {/* (Map preview removed — users go to /map via the bottom nav) */}
+
 
       {/* 2) Suggestions — text only, no photos */}
       <div className="px-5 mt-6">
