@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ArrowRight, MapPin, Star, MessageCircle, X, Search, Clock, Ticket, Store, Plus, Volume2, Car } from 'lucide-react';
+import { ArrowRight, MapPin, Star, MessageCircle, X, Search, Clock, Ticket, Store, Plus, Volume2 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF } from '@react-google-maps/api';
@@ -333,6 +333,20 @@ function InfoChip({
     >
       <span className="text-heritage-brown flex-shrink-0">{icon}</span>
       <span className="truncate">{label}</span>
+    </div>
+  );
+}
+
+function AccessRow({ label, icon, ok }: { label: string; icon: string; ok: boolean }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className={`text-[11px] font-heading ${ok ? 'text-heritage-brown' : 'text-muted-foreground line-through'}`}>
+        {ok ? 'متوفر' : 'غير متوفر'}
+      </span>
+      <div className="flex items-center gap-2">
+        <span className="text-heritage-brown text-xs">{label}</span>
+        <span className="text-base">{icon}</span>
+      </div>
     </div>
   );
 }
