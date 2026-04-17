@@ -31,23 +31,23 @@ export default function AccessibilityFab() {
 
   return (
     <>
-      {/* Top accessibility bar — visible on every page */}
-      <div className="sticky top-0 z-[55] max-w-lg mx-auto">
+      {/* Top accessibility bar — fixed on every page */}
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 z-[55] w-full max-w-lg pointer-events-none">
         <button
           onClick={() => setOpen(true)}
-          className={`w-full flex items-center justify-between gap-2 px-4 py-2 backdrop-blur border-b border-border shadow-sm transition-colors ${
+          className={`pointer-events-auto w-full flex items-center justify-between gap-2 px-4 py-2 backdrop-blur-md border-b shadow-md transition-colors ${
             anyActive
-              ? 'bg-primary/15 text-heritage-brown'
-              : 'bg-card/95 text-heritage-brown'
+              ? 'bg-heritage-brown text-primary-foreground border-heritage-brown'
+              : 'bg-card/90 text-heritage-brown border-border'
           }`}
           aria-label="إعدادات إمكانية الوصول"
         >
-          <ChevronDown size={14} className="text-heritage-brown/70" />
+          <ChevronDown size={14} className={anyActive ? 'opacity-80' : 'text-heritage-brown/70'} />
           <div className="flex items-center gap-2">
             <span className="text-xs font-heading font-semibold">
               إمكانية الوصول {anyActive && '• مُفعّلة'}
             </span>
-            <Accessibility size={18} strokeWidth={1.8} className="text-heritage-brown" />
+            <Accessibility size={18} strokeWidth={1.8} className={anyActive ? '' : 'text-heritage-brown'} />
           </div>
         </button>
       </div>
