@@ -1,5 +1,4 @@
 import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
-import { MapPin } from 'lucide-react';
 import { culturalPlaces } from '@/lib/mockData';
 
 const GOOGLE_MAPS_API_KEY = 'AIzaSyB__li1XnzJU765wUSkUiWai-p5G2h1UEk';
@@ -25,10 +24,23 @@ interface Props {
 }
 
 export default function HomeMapPreview({ userLocation }: Props) {
-  const { isLoaded } = useJsApiLoader({
+  const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
   });
+
+  if (loadError) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-secondary/60 px-4 text-center">
+        <div>
+          <p className="font-heading text-xs text-heritage-brown">الخريطة غير متاحة حالياً</p>
+          <p className="mt-1 text-[10px] text-muted-foreground">
+            تأكد من تفعيل Billing و Maps JavaScript API
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isLoaded) {
     return (

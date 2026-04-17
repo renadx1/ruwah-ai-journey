@@ -63,8 +63,13 @@ export default function GoogleMapView({
 
   if (loadError) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-heritage-sand text-heritage-brown text-sm font-heading p-4 text-center">
-        تعذر تحميل الخريطة
+      <div className="w-full h-full flex items-center justify-center bg-heritage-sand p-4 text-center">
+        <div>
+          <p className="text-sm font-heading text-heritage-brown">تعذر تحميل الخريطة</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            تأكد من تفعيل Billing و Maps JavaScript API
+          </p>
+        </div>
       </div>
     );
   }
