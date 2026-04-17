@@ -43,7 +43,7 @@ export default function Index() {
 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-primary-foreground font-heading text-2xl font-bold">
-            مرحبًا، {displayName} 👋
+            مرحبًا، {displayName}
           </h1>
         </motion.div>
 

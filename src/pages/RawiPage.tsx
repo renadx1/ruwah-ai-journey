@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ArrowRight, Send, Bot, User as UserIcon, Mic, Volume2, Square, Paperclip, X, History, Plus, Trash2 } from 'lucide-react';
+import { ArrowRight, Send, Bot, User as UserIcon, Mic, Volume2, Square, Paperclip, X, History, Plus, Trash2, BookOpen, MessageSquareQuote, ScrollText, Drama } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { learnCategories } from '@/lib/mockData';
@@ -330,7 +330,9 @@ export default function RawiPage() {
                 onClick={() => handleSend(categoryPrompts[cat.id])}
                 className="bg-card border border-border rounded-2xl p-3 text-right active:scale-[0.97] transition-transform shadow-sm flex items-center gap-2"
               >
-                <span className="text-xl grayscale-[40%] flex-shrink-0">{cat.icon}</span>
+                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                  {categoryIconMap[cat.id]}
+                </span>
                 <div className="flex-1 text-right min-w-0">
                   <h3 className="font-heading font-semibold text-xs text-heritage-brown truncate">
                     {cat.title}
