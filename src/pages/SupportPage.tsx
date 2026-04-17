@@ -26,10 +26,10 @@ export default function SupportPage() {
     <main className="min-h-screen pb-32 najdi-pattern" data-a11y-read>
       <div className="px-5 pt-12 pb-4">
         <div className="flex items-center justify-between mb-4">
-          <AccessibilityButton tone="light" />
           <button onClick={() => navigate('/')} aria-label="رجوع للرئيسية">
             <ArrowRight size={22} className="text-heritage-brown" />
           </button>
+          <AccessibilityButton tone="light" />
         </div>
         <motion.div
           initial={{ opacity: 0, y: 10 }}

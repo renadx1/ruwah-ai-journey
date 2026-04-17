@@ -108,8 +108,15 @@ export default function MapPage() {
           })}
         </div>
 
-        {/* Top overlay: search bar + back (back on the right for RTL) */}
+        {/* Top overlay: back (left) + search bar (right) */}
         <div className="absolute top-0 left-0 right-0 z-20 px-4 pt-12 pb-3 flex items-center gap-2">
+          <button
+            onClick={() => navigate('/')}
+            aria-label="رجوع للرئيسية"
+            className="w-10 h-10 bg-card/95 backdrop-blur rounded-full flex items-center justify-center shadow-md border border-border flex-shrink-0"
+          >
+            <ArrowRight size={18} className="text-heritage-brown" />
+          </button>
           <div className="flex-1 bg-card/95 backdrop-blur rounded-full shadow-md border border-border flex items-center gap-2 px-4 py-2.5">
             <Search size={16} className="text-heritage-brown/70 flex-shrink-0" />
             <input
@@ -124,13 +131,6 @@ export default function MapPage() {
               </button>
             )}
           </div>
-          <button
-            onClick={() => navigate('/')}
-            aria-label="رجوع للرئيسية"
-            className="w-10 h-10 bg-card/95 backdrop-blur rounded-full flex items-center justify-center shadow-md border border-border flex-shrink-0"
-          >
-            <ArrowRight size={18} className="text-heritage-brown" />
-          </button>
         </div>
       </div>
 
