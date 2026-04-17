@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ArrowRight, MapPin, Star, MessageCircle, X, Search, Clock, Ticket, Store, Plus, Volume2, Navigation } from 'lucide-react';
+import { ArrowRight, MapPin, Star, MessageCircle, X, Search, Clock, Ticket, Store, Plus, Volume2, Navigation, Landmark, Castle, Building2, ShoppingBag } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { culturalPlaces, CulturalPlace, distanceKm } from '@/lib/mockData';
@@ -13,6 +13,21 @@ const categoryLabels: Record<string, string> = {
   heritage: 'تراثي',
   historical: 'تاريخي',
   market: 'سوق شعبي',
+};
+
+const categoryIcon = (cat: string) => {
+  switch (cat) {
+    case 'museum':
+      return <Landmark size={20} className="text-heritage-brown" strokeWidth={1.6} />;
+    case 'heritage':
+      return <Castle size={20} className="text-heritage-brown" strokeWidth={1.6} />;
+    case 'historical':
+      return <Building2 size={20} className="text-heritage-brown" strokeWidth={1.6} />;
+    case 'market':
+      return <ShoppingBag size={20} className="text-heritage-brown" strokeWidth={1.6} />;
+    default:
+      return <Landmark size={20} className="text-heritage-brown" strokeWidth={1.6} />;
+  }
 };
 
 export default function MapPage() {
@@ -187,7 +202,9 @@ export default function MapPage() {
                     <h3 className="font-heading text-sm font-semibold text-heritage-brown">{place.name}</h3>
                     <span className="text-[11px] text-muted-foreground">{place.district}</span>
                   </div>
-                  <span className="text-xl grayscale-[40%]">{place.image}</span>
+                  <span className="flex-shrink-0 w-9 h-9 rounded-full bg-secondary flex items-center justify-center">
+                    {categoryIcon(place.category)}
+                  </span>
                 </button>
               ))}
               {filtered.length === 0 && (
