@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react';
-import { ArrowRight, MapPin, Star, MessageCircle, X, Search, Accessibility, Clock, Ticket, Store, Plus } from 'lucide-react';
+import { ArrowRight, MapPin, Star, MessageCircle, X, Search, Clock, Ticket, Store, Plus, Volume2, Car } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF } from '@react-google-maps/api';
 import { culturalPlaces, CulturalPlace, distanceKm } from '@/lib/mockData';
 import { useLocation } from '@/lib/useStore';
+import { useAccessibility } from '@/lib/accessibility';
+import StoreUploadModal from '@/components/StoreUploadModal';
 
 const categoryLabels: Record<string, string> = {
   museum: 'متحف',
@@ -33,12 +35,14 @@ const najdiMapStyle: google.maps.MapTypeStyle[] = [
 export default function MapPage() {
   const navigate = useNavigate();
   const userLoc = useLocation();
+  const { speak, isSpeaking, stopSpeaking } = useAccessibility();
   const [searchParams] = useSearchParams();
   const preselected = searchParams.get('place');
   const [selected, setSelected] = useState<CulturalPlace | null>(
     preselected ? culturalPlaces.find((p) => p.id === preselected) || null : null
   );
   const [search, setSearch] = useState('');
+  const [showUpload, setShowUpload] = useState(false);
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
