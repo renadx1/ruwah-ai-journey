@@ -4,7 +4,9 @@ type AccessibilityState = {
   largeText: boolean;
   highContrast: boolean;
   voiceControl: boolean;
-  toggleLargeText: () => void;
+  textScale: number;
+  increaseText: () => void;
+  decreaseText: () => void;
   toggleHighContrast: () => void;
   toggleVoiceControl: () => void;
   speak: (text: string) => void;
@@ -14,19 +16,38 @@ type AccessibilityState = {
 
 const Ctx = createContext<AccessibilityState | null>(null);
 
+const MIN_SCALE = 0.85;
+const MAX_SCALE = 1.5;
+const STEP = 0.1;
+
 export function AccessibilityProvider({ children }: { children: ReactNode }) {
-  const [largeText, setLargeText] = useState(() => localStorage.getItem('a11y_large') === '1');
+  const [textScale, setTextScale] = useState<number>(() => {
+    const v = parseFloat(localStorage.getItem('a11y_scale') || '1');
+    return isNaN(v) ? 1 : Math.min(MAX_SCALE, Math.max(MIN_SCALE, v));
+  });
   const [highContrast, setHighContrast] = useState(() => localStorage.getItem('a11y_contrast') === '1');
   const [voiceControl, setVoiceControl] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
+  const largeText = textScale > 1.001;
+
   useEffect(() => {
     const root = document.documentElement;
+    root.style.fontSize = `${textScale * 16}px`;
     root.classList.toggle('a11y-large-text', largeText);
     root.classList.toggle('a11y-high-contrast', highContrast);
-    localStorage.setItem('a11y_large', largeText ? '1' : '0');
+    localStorage.setItem('a11y_scale', String(textScale));
     localStorage.setItem('a11y_contrast', highContrast ? '1' : '0');
-  }, [largeText, highContrast]);
+  }, [textScale, largeText, highContrast]);
+
+  const increaseText = useCallback(
+    () => setTextScale((v) => Math.min(MAX_SCALE, +(v + STEP).toFixed(2))),
+    []
+  );
+  const decreaseText = useCallback(
+    () => setTextScale((v) => Math.max(MIN_SCALE, +(v - STEP).toFixed(2))),
+    []
+  );
 
   const stopSpeaking = useCallback(() => {
     if ('speechSynthesis' in window) {
@@ -88,7 +109,9 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
         largeText,
         highContrast,
         voiceControl,
-        toggleLargeText: () => setLargeText((v) => !v),
+        textScale,
+        increaseText,
+        decreaseText,
         toggleHighContrast: () => setHighContrast((v) => !v),
         toggleVoiceControl: () => setVoiceControl((v) => !v),
         speak,
