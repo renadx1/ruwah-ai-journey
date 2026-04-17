@@ -65,29 +65,30 @@ export default function Index() {
         </motion.div>
       </div>
 
-      {/* 1) Live map preview — light & airy */}
+      {/* 1) Live map preview — interactive */}
       <div className="px-5 -mt-4 relative z-10">
-        <motion.button
+        <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          onClick={() => navigate('/map')}
-          className="w-full bg-card rounded-2xl overflow-hidden shadow-md border border-border active:scale-[0.98] transition-transform"
+          className="w-full bg-card rounded-2xl overflow-hidden shadow-md border border-border"
         >
-          <div className="h-32 relative pointer-events-none">
+          <div className="h-40 relative">
             <HomeMapPreview userLocation={location} />
-            {/* City label overlay */}
-            <div className="absolute top-2 right-2 bg-card/90 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1 shadow-sm">
+            <div className="absolute top-2 right-2 bg-card/90 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1 shadow-sm pointer-events-none z-[1]">
               <span className="text-heritage-brown font-heading text-[11px] font-semibold">
                 {location.city}
               </span>
               <MapPin size={11} className="text-heritage-brown" strokeWidth={2} />
             </div>
           </div>
-          <div className="p-3 flex items-center justify-between bg-card border-t border-border">
+          <button
+            onClick={() => navigate('/map')}
+            className="w-full p-3 flex items-center justify-between bg-card border-t border-border active:bg-secondary/50 transition-colors"
+          >
             <ChevronLeft size={16} className="text-muted-foreground" />
-            <span className="text-muted-foreground text-xs font-heading">استكشف الخريطة</span>
-          </div>
-        </motion.button>
+            <span className="text-muted-foreground text-xs font-heading">افتح الخريطة كاملة</span>
+          </button>
+        </motion.div>
       </div>
 
 
