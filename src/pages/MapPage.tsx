@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import { ArrowRight, MapPin, Star, MessageCircle, X, Search, Clock, Ticket, Store, Plus, Volume2 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF } from '@react-google-maps/api';
 import { culturalPlaces, CulturalPlace, distanceKm } from '@/lib/mockData';
 import { useLocation } from '@/lib/useStore';
 import { useAccessibility } from '@/lib/accessibility';
