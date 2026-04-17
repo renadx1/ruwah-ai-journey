@@ -41,20 +41,14 @@ export default function BottomNav() {
     );
   };
 
-  // SVG with notch carved out of the top-center for the home circle
-  const NOTCH_RADIUS = 38; // half-width of the notch
-  const BAR_HEIGHT = 78;
-  const VIEW_W = 400;
-
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 max-w-lg mx-auto pointer-events-none">
-      <div className="relative pointer-events-auto">
-        {/* Curved background using SVG */}
+      <div className="relative pointer-events-auto h-[88px]">
+        {/* Curved background using SVG with notch */}
         <svg
-          viewBox={`0 0 ${VIEW_W} ${BAR_HEIGHT}`}
+          viewBox="0 0 400 88"
           preserveAspectRatio="none"
-          className="w-full block drop-shadow-[0_-4px_12px_rgba(60,30,10,0.12)]"
-          style={{ height: BAR_HEIGHT }}
+          className="absolute inset-x-0 bottom-0 w-full h-full drop-shadow-[0_-4px_12px_rgba(60,30,10,0.12)]"
         >
           <defs>
             <linearGradient id="navGrad" x1="0" y1="0" x2="0" y2="1">
@@ -66,35 +60,26 @@ export default function BottomNav() {
             fill="url(#navGrad)"
             stroke="hsl(var(--border))"
             strokeWidth="1"
-            d={`
-              M0,12
-              L${VIEW_W / 2 - NOTCH_RADIUS - 14},12
-              C${VIEW_W / 2 - NOTCH_RADIUS},12 ${VIEW_W / 2 - NOTCH_RADIUS + 4},${NOTCH_RADIUS - 4} ${VIEW_W / 2},${NOTCH_RADIUS - 4}
-              C${VIEW_W / 2 + NOTCH_RADIUS - 4},${NOTCH_RADIUS - 4} ${VIEW_W / 2 + NOTCH_RADIUS},12 ${VIEW_W / 2 + NOTCH_RADIUS + 14},12
-              L${VIEW_W},12
-              L${VIEW_W},${BAR_HEIGHT}
-              L0,${BAR_HEIGHT}
-              Z
-            `}
+            d="M0,20 L150,20 C166,20 170,52 200,52 C230,52 234,20 250,20 L400,20 L400,88 L0,88 Z"
           />
         </svg>
 
         {/* Tabs overlaid on the bar */}
-        <div className="absolute inset-0 flex items-end px-2 pb-1">
+        <div className="absolute inset-x-0 bottom-0 top-0 flex items-end px-2 pb-2">
           <div className="flex flex-1 justify-around">
             {sideTabs.slice(0, 2).map(renderTab)}
           </div>
-          <div className="w-20" />
+          <div className="w-20 flex-shrink-0" />
           <div className="flex flex-1 justify-around">
             {sideTabs.slice(2).map(renderTab)}
           </div>
         </div>
 
-        {/* Center elevated Home button — fixed in the middle */}
+        {/* Center elevated Home button — pinned to exact center */}
         <motion.button
           onClick={() => navigate('/')}
           whileTap={{ scale: 0.92 }}
-          className="absolute left-1/2 -translate-x-1/2 -top-7"
+          className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/3 flex flex-col items-center"
           aria-label="الرئيسية"
         >
           <div
@@ -104,7 +89,7 @@ export default function BottomNav() {
           >
             <Home size={26} strokeWidth={1.8} className="text-primary-foreground" />
           </div>
-          <span className={`block text-center text-[10px] font-heading mt-1 ${homeActive ? 'font-bold text-heritage-brown' : 'font-semibold text-heritage-brown/80'}`}>
+          <span className={`text-[10px] font-heading mt-1 ${homeActive ? 'font-bold text-heritage-brown' : 'font-semibold text-heritage-brown/80'}`}>
             الرئيسية
           </span>
         </motion.button>
