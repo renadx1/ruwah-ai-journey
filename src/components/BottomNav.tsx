@@ -2,7 +2,7 @@ import { Home, Map, BookOpen, User, LifeBuoy } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
-// Side tabs (RTL): right side first, then left side. Center is Home (raised).
+// Side tabs (RTL): right side first, then left side. Center is Home (raised, fixed).
 const sideTabs = [
   // Right side
   { path: '/profile', icon: User, label: 'حسابي' },
@@ -75,7 +75,7 @@ export default function BottomNav() {
           </div>
         </div>
 
-        {/* Center elevated Home button — pinned to exact center */}
+        {/* Center elevated Home button — fixed centered, always shown active style */}
         <motion.button
           onClick={() => navigate('/')}
           whileTap={{ scale: 0.92 }}
@@ -89,7 +89,7 @@ export default function BottomNav() {
           >
             <Home size={26} strokeWidth={1.8} className="text-primary-foreground" />
           </div>
-          <span className={`text-[10px] font-heading mt-1 ${homeActive ? 'font-bold text-heritage-brown' : 'font-semibold text-heritage-brown/80'}`}>
+          <span className="text-[10px] font-heading mt-1 font-bold text-heritage-brown">
             الرئيسية
           </span>
         </motion.button>

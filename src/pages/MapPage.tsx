@@ -1,18 +1,22 @@
-import { useState, useMemo, useEffect } from 'react';
-import { ArrowRight, MapPin, Star, MessageCircle, X, Search, KeyRound } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { ArrowRight, MapPin, Star, MessageCircle, X, Search, Accessibility, Clock, Ticket, Store, Plus } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF } from '@react-google-maps/api';
-import { culturalPlaces, CulturalPlace } from '@/lib/mockData';
+import { culturalPlaces, CulturalPlace, distanceKm } from '@/lib/mockData';
 import { useLocation } from '@/lib/useStore';
 
 const categoryLabels: Record<string, string> = {
   museum: 'متحف',
   heritage: 'تراثي',
   historical: 'تاريخي',
+  market: 'سوق شعبي',
 };
 
-// Najdi-inspired map style: warm sand tones
+// Google Maps API key — set by developer (not visible in UI).
+// TODO: After enabling Lovable Cloud, move this to a secret + edge function.
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
+
 const najdiMapStyle: google.maps.MapTypeStyle[] = [
   { elementType: 'geometry', stylers: [{ color: '#f1e6d0' }] },
   { elementType: 'labels.text.fill', stylers: [{ color: '#5a3a1a' }] },
@@ -24,7 +28,6 @@ const najdiMapStyle: google.maps.MapTypeStyle[] = [
   { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#dcb87a' }] },
   { featureType: 'transit', stylers: [{ visibility: 'off' }] },
   { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#a8c4c9' }] },
-  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#3a5a5e' }] },
 ];
 
 export default function MapPage() {
@@ -36,18 +39,20 @@ export default function MapPage() {
     preselected ? culturalPlaces.find((p) => p.id === preselected) || null : null
   );
   const [search, setSearch] = useState('');
-  const [apiKey, setApiKey] = useState<string>(() => localStorage.getItem('ruwat_gmaps_key') || '');
-  const [keyInput, setKeyInput] = useState('');
 
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: apiKey,
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
     id: 'ruwat-gmaps',
   });
 
   const filtered = useMemo(
     () =>
       culturalPlaces.filter(
-        (p) => !search.trim() || p.name.includes(search) || p.nameEn.toLowerCase().includes(search.toLowerCase())
+        (p) =>
+          !search.trim() ||
+          p.name.includes(search) ||
+          p.district.includes(search) ||
+          p.nameEn.toLowerCase().includes(search.toLowerCase())
       ),
     [search]
   );
@@ -57,18 +62,17 @@ export default function MapPage() {
     [selected, userLoc]
   );
 
-  const saveKey = () => {
-    if (keyInput.trim()) {
-      localStorage.setItem('ruwat_gmaps_key', keyInput.trim());
-      setApiKey(keyInput.trim());
-    }
-  };
+  const distance = selected
+    ? distanceKm(userLoc.lat, userLoc.lng, selected.lat, selected.lng)
+    : 0;
+
+  const showMap = GOOGLE_MAPS_API_KEY && isLoaded && !loadError;
 
   return (
     <div className="min-h-screen pb-32 bg-background">
       {/* Map area */}
-      <div className="relative h-[58vh] bg-heritage-sand overflow-hidden">
-        {apiKey && isLoaded && !loadError ? (
+      <div className="relative h-[52vh] bg-heritage-sand overflow-hidden">
+        {showMap ? (
           <GoogleMap
             mapContainerStyle={{ width: '100%', height: '100%' }}
             center={center}
@@ -102,38 +106,31 @@ export default function MapPage() {
               >
                 <div style={{ direction: 'rtl', minWidth: 140 }}>
                   <strong style={{ color: '#5a3a1a' }}>{selected.name}</strong>
-                  <div style={{ fontSize: 11, color: '#8b5a2b' }}>{categoryLabels[selected.category]}</div>
+                  <div style={{ fontSize: 11, color: '#8b5a2b' }}>{selected.district}</div>
                 </div>
               </InfoWindowF>
             )}
           </GoogleMap>
         ) : (
-          <div className="absolute inset-0 najdi-pattern-strong flex items-center justify-center p-6">
-            <div className="bg-card/95 backdrop-blur rounded-2xl p-5 shadow-lg border border-border max-w-sm w-full text-right">
-              <div className="flex items-center gap-2 justify-end mb-2">
-                <h3 className="font-heading font-bold text-heritage-brown">مفتاح Google Maps</h3>
-                <KeyRound size={18} className="text-heritage-brown" />
+          // Fallback Najdi-pattern map view
+          <div className="absolute inset-0 najdi-pattern-strong">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center text-heritage-brown/70 text-xs font-heading">
+                {loadError ? 'تعذّر تحميل الخريطة' : 'جاري تجهيز الخريطة...'}
               </div>
-              <p className="text-xs text-muted-foreground mb-3">
-                لعرض الخريطة بدقة، أدخل مفتاح Google Maps API الخاص بك. يُحفظ محليًا على جهازك فقط.
-              </p>
-              <input
-                value={keyInput}
-                onChange={(e) => setKeyInput(e.target.value)}
-                placeholder="AIza..."
-                className="w-full bg-secondary rounded-xl px-3 py-2 text-sm text-right outline-none focus:ring-2 focus:ring-primary/30 mb-2 font-body"
-                dir="ltr"
-              />
-              <button
-                onClick={saveKey}
-                disabled={!keyInput.trim()}
-                className="w-full bg-gradient-to-br from-primary to-heritage-brown text-primary-foreground rounded-xl py-2.5 font-heading text-sm disabled:opacity-50"
-              >
-                حفظ وعرض الخريطة
-              </button>
-              {loadError && (
-                <p className="text-xs text-destructive mt-2">فشل تحميل الخريطة. تحقق من المفتاح.</p>
-              )}
+            </div>
+            {/* Show place pins as cards on the pattern */}
+            <div className="absolute inset-x-0 bottom-4 px-4 flex gap-2 overflow-x-auto" dir="rtl">
+              {filtered.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => setSelected(p)}
+                  className="min-w-[120px] bg-card/95 backdrop-blur rounded-xl p-2 shadow border border-border text-right flex-shrink-0"
+                >
+                  <span className="text-lg grayscale-[40%]">{p.image}</span>
+                  <p className="text-[10px] font-heading text-heritage-brown truncate">{p.name}</p>
+                </button>
+              ))}
             </div>
           </div>
         )}
@@ -151,7 +148,7 @@ export default function MapPage() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="ابحث عن موقع ثقافي..."
+              placeholder="ابحث عن موقع أو حي..."
               className="flex-1 bg-transparent text-sm outline-none text-right font-body text-foreground placeholder:text-muted-foreground"
             />
             {search && (
@@ -173,34 +170,68 @@ export default function MapPage() {
             exit={{ opacity: 0, y: 20 }}
             className="px-5 -mt-6 relative z-20"
           >
-            <div className="bg-card rounded-2xl p-5 shadow-lg border border-border">
-              <div className="flex items-start justify-between mb-3">
-                <button onClick={() => setSelected(null)}>
-                  <X size={18} className="text-muted-foreground" />
-                </button>
-                <div className="text-right flex-1 mr-3">
-                  <span className="text-xs bg-secondary text-heritage-brown px-2 py-0.5 rounded-full font-heading">
-                    {categoryLabels[selected.category]}
-                  </span>
-                  <h2 className="font-heading font-bold text-lg mt-1 text-heritage-brown">{selected.name}</h2>
+            <div className="bg-card rounded-2xl shadow-lg border border-border overflow-hidden">
+              {/* Photo gallery */}
+              {selected.photos.length > 0 && (
+                <div className="flex gap-1 overflow-x-auto h-40 bg-heritage-sand" dir="ltr">
+                  {selected.photos.map((src, i) => (
+                    <img
+                      key={i}
+                      src={src}
+                      alt={`${selected.name} ${i + 1}`}
+                      className="h-full w-auto object-cover flex-shrink-0"
+                      loading="lazy"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  ))}
                 </div>
-                <span className="text-3xl grayscale-[40%]">{selected.image}</span>
-              </div>
-              <p className="text-muted-foreground text-sm leading-relaxed text-right mb-4">
-                {selected.description}
-              </p>
-              <div className="flex items-center justify-between">
+              )}
+
+              <div className="p-5">
+                <div className="flex items-start justify-between mb-3">
+                  <button onClick={() => setSelected(null)} aria-label="إغلاق">
+                    <X size={18} className="text-muted-foreground" />
+                  </button>
+                  <div className="text-right flex-1 mr-3">
+                    <span className="text-xs bg-secondary text-heritage-brown px-2 py-0.5 rounded-full font-heading">
+                      {categoryLabels[selected.category]}
+                    </span>
+                    <h2 className="font-heading font-bold text-lg mt-1.5 text-heritage-brown">
+                      {selected.name}
+                    </h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">{selected.district}</p>
+                  </div>
+                </div>
+
+                <p className="text-foreground/80 text-sm leading-relaxed text-right mb-4">
+                  {selected.description}
+                </p>
+
+                {/* Info chips */}
+                <div className="grid grid-cols-2 gap-2 mb-4 text-right" dir="rtl">
+                  <InfoChip icon={<MapPin size={14} />} label={`${distance.toFixed(1)} كم عنك`} />
+                  <InfoChip icon={<Star size={14} className="fill-heritage-brown" />} label={`تقييم ${selected.rating}`} />
+                  <InfoChip icon={<Ticket size={14} />} label={selected.entryFee} />
+                  <InfoChip icon={<Clock size={14} />} label={selected.openingHours} />
+                  <InfoChip
+                    icon={
+                      <span className="text-sm leading-none">{selected.accessible ? '♿' : '🚷'}</span>
+                    }
+                    label={selected.accessible ? 'يدعم الاحتياجات الخاصة' : 'لا يدعم الاحتياجات الخاصة'}
+                    highlight={selected.accessible}
+                    full
+                  />
+                </div>
+
                 <button
                   onClick={() => navigate(`/rawi?tab=chat&place=${encodeURIComponent(selected.name)}`)}
-                  className="flex items-center gap-2 bg-gradient-to-br from-primary to-heritage-brown text-primary-foreground px-4 py-2.5 rounded-xl font-heading text-sm active:scale-[0.97] transition-transform"
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-br from-primary to-heritage-brown text-primary-foreground px-4 py-3 rounded-xl font-heading text-sm active:scale-[0.97] transition-transform"
                 >
                   <MessageCircle size={16} />
-                  <span>اسأل الراوي</span>
+                  <span>اسأل الراوي عن هذا المكان</span>
                 </button>
-                <div className="flex items-center gap-1">
-                  <span className="text-sm font-heading text-foreground">{selected.rating}</span>
-                  <Star size={14} className="text-heritage-brown fill-heritage-brown" />
-                </div>
               </div>
             </div>
           </motion.div>
@@ -217,7 +248,7 @@ export default function MapPage() {
                   <MapPin size={14} className="text-heritage-brown/70 flex-shrink-0" />
                   <div className="flex-1 text-right">
                     <h3 className="font-heading text-sm font-semibold text-heritage-brown">{place.name}</h3>
-                    <span className="text-[11px] text-muted-foreground">{categoryLabels[place.category]}</span>
+                    <span className="text-[11px] text-muted-foreground">{place.district}</span>
                   </div>
                   <span className="text-xl grayscale-[40%]">{place.image}</span>
                 </button>
@@ -226,9 +257,47 @@ export default function MapPage() {
                 <p className="text-center text-muted-foreground text-sm py-6">لا توجد نتائج</p>
               )}
             </div>
+
+            {/* Upload store entry */}
+            <button
+              onClick={() => navigate('/support')}
+              className="w-full mt-5 bg-gradient-to-br from-heritage-brown to-primary text-primary-foreground rounded-2xl p-4 flex items-center gap-3 text-right shadow-md active:scale-[0.98] transition-transform"
+            >
+              <div className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center flex-shrink-0">
+                <Store size={18} strokeWidth={1.7} />
+              </div>
+              <div className="flex-1 text-right">
+                <h3 className="font-heading font-bold text-sm">رفع المتاجر الثقافية</h3>
+                <p className="text-[11px] opacity-80 mt-0.5">سجّل متجرك ليظهر على الخريطة</p>
+              </div>
+              <Plus size={18} />
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+function InfoChip({
+  icon,
+  label,
+  highlight,
+  full,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  highlight?: boolean;
+  full?: boolean;
+}) {
+  return (
+    <div
+      className={`flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-heading ${
+        highlight ? 'bg-primary/10 text-heritage-brown' : 'bg-secondary text-heritage-brown'
+      } ${full ? 'col-span-2' : ''}`}
+    >
+      <span className="text-heritage-brown flex-shrink-0">{icon}</span>
+      <span className="truncate">{label}</span>
     </div>
   );
 }

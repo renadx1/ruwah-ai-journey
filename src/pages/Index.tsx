@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Star, ChevronLeft } from 'lucide-react';
+import { MapPin, Star, ChevronLeft, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useUserName, useLocation, usePoints } from '@/lib/useStore';
-import { culturalPlaces } from '@/lib/mockData';
+import { culturalPlaces, distanceKm } from '@/lib/mockData';
 
 export default function Index() {
   const navigate = useNavigate();
@@ -11,6 +11,12 @@ export default function Index() {
   const { points } = usePoints();
 
   const displayName = name || 'ضيفنا';
+
+  // Personalized suggestions: places sorted by distance from user
+  const suggestions = [...culturalPlaces]
+    .map((p) => ({ ...p, dist: distanceKm(location.lat, location.lng, p.lat, p.lng) }))
+    .sort((a, b) => a.dist - b.dist)
+    .slice(0, 5);
 
   return (
     <div className="min-h-screen pb-32 najdi-pattern">
@@ -35,7 +41,6 @@ export default function Index() {
           <h1 className="text-primary-foreground font-heading text-2xl font-bold">
             مرحبًا، {displayName} 👋
           </h1>
-          <p className="text-primary-foreground/80 text-sm mt-1">اكتشف تراث وثقافة المملكة</p>
         </motion.div>
 
         {/* Points badge */}
@@ -56,8 +61,55 @@ export default function Index() {
         </motion.div>
       </div>
 
-      {/* Map Preview */}
-      <div className="px-5 -mt-4">
+      {/* Personalized suggestions — moved ABOVE "اكتشف" */}
+      <div className="px-5 mt-6">
+        <div className="flex items-baseline justify-between mb-3" dir="rtl">
+          <h2 className="font-heading font-bold text-foreground">اقتراحات أماكن سياحية في الرياض</h2>
+        </div>
+        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide" style={{ direction: 'rtl' }}>
+          {suggestions.map((place, i) => (
+            <motion.button
+              key={place.id}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 + i * 0.08 }}
+              onClick={() => navigate(`/map?place=${place.id}`)}
+              className="min-w-[180px] bg-card border border-border rounded-2xl overflow-hidden active:scale-[0.97] transition-transform shadow-sm flex-shrink-0 text-right"
+            >
+              <div className="h-24 bg-heritage-sand overflow-hidden relative">
+                <img
+                  src={place.photos[0]}
+                  alt={place.name}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+                <div className="absolute top-2 right-2 bg-card/90 backdrop-blur rounded-full px-2 py-0.5 flex items-center gap-1">
+                  <span className="text-[10px] font-heading text-heritage-brown">
+                    {place.dist.toFixed(1)} كم
+                  </span>
+                </div>
+              </div>
+              <div className="p-3">
+                <h3 className="font-heading text-xs font-semibold truncate text-heritage-brown">
+                  {place.name}
+                </h3>
+                <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{place.district}</p>
+                <div className="flex items-center gap-1 mt-1.5 justify-end">
+                  <span className="text-[10px] text-muted-foreground">{place.rating}</span>
+                  <Star size={10} className="text-heritage-brown fill-heritage-brown" />
+                </div>
+              </div>
+            </motion.button>
+          ))}
+        </div>
+      </div>
+
+      {/* Map Preview - الخريطة (اكتشف) */}
+      <div className="px-5 mt-6">
+        <h2 className="font-heading font-bold text-foreground mb-3">اكتشف</h2>
         <motion.button
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
@@ -65,14 +117,10 @@ export default function Index() {
           onClick={() => navigate('/map')}
           className="w-full bg-card rounded-2xl overflow-hidden shadow-md border border-border active:scale-[0.98] transition-transform"
         >
-          <div className="h-36 bg-heritage-sand relative flex items-center justify-center">
-            <div className="absolute inset-0 opacity-30" style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='400' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23c4a265'/%3E%3Cstop offset='1' stop-color='%23a08050'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='400' height='200'/%3E%3Ccircle cx='200' cy='100' r='60' fill='%23d4b87a' opacity='0.3'/%3E%3Ccircle cx='150' cy='80' r='4' fill='%23704020'/%3E%3Ccircle cx='220' cy='110' r='4' fill='%23704020'/%3E%3Ccircle cx='180' cy='130' r='4' fill='%23704020'/%3E%3C/svg%3E")`,
-              backgroundSize: 'cover'
-            }} />
+          <div className="h-32 bg-heritage-sand relative flex items-center justify-center najdi-pattern-strong">
             <div className="relative z-10 flex flex-col items-center gap-2">
-              <MapPin size={28} className="text-primary" />
-              <span className="text-foreground font-heading text-sm font-semibold">{location.city}</span>
+              <MapPin size={28} className="text-heritage-brown" strokeWidth={1.7} />
+              <span className="text-heritage-brown font-heading text-sm font-semibold">{location.city}</span>
             </div>
           </div>
           <div className="p-3 flex items-center justify-between">
@@ -82,69 +130,28 @@ export default function Index() {
         </motion.button>
       </div>
 
-      {/* Quick Actions */}
-      <div className="px-5 mt-6">
-        <h2 className="font-heading font-bold text-foreground mb-3">اكتشف</h2>
-        <div className="grid grid-cols-2 gap-3">
-          <motion.button
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            onClick={() => navigate('/rawi')}
-            className="bg-card border border-border rounded-2xl p-4 text-right active:scale-[0.97] transition-transform shadow-sm"
-          >
-            <span className="text-3xl grayscale-[60%]">📚</span>
-            <h3 className="font-heading font-semibold text-sm mt-2 text-heritage-brown">الراوي</h3>
-            <p className="text-muted-foreground text-[11px] mt-1">تعلّم وحوار ذكي</p>
-          </motion.button>
-          <motion.button
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            onClick={() => navigate('/rawi?tab=chat')}
-            className="bg-card border border-border rounded-2xl p-4 text-right active:scale-[0.97] transition-transform shadow-sm"
-          >
-            <span className="text-3xl grayscale-[60%]">💬</span>
-            <h3 className="font-heading font-semibold text-sm mt-2 text-heritage-brown">حدّث الراوي</h3>
-            <p className="text-muted-foreground text-[11px] mt-1">محادثة ذكية</p>
-          </motion.button>
-        </div>
-      </div>
-
-      {/* Personalized suggestions */}
-      <div className="px-5 mt-6">
-        <div className="flex items-baseline justify-between mb-3" dir="rtl">
-          <h2 className="font-heading font-bold text-foreground">اقتراحات مخصصة لك</h2>
-          <span className="text-[10px] text-muted-foreground font-heading">مختارة بناءً على اهتماماتك</span>
-        </div>
-        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide" style={{ direction: 'rtl' }}>
-          {(() => {
-            // Simple personalization: rotate suggestions based on a stable seed (user name length + day of month)
-            const seed = (displayName.length + new Date().getDate()) % culturalPlaces.length;
-            const ordered = [...culturalPlaces.slice(seed), ...culturalPlaces.slice(0, seed)];
-            return ordered.slice(0, 4).map((place, i) => (
-              <motion.button
-                key={place.id}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 + i * 0.1 }}
-                onClick={() => navigate(`/map?place=${place.id}`)}
-                className="min-w-[160px] bg-card border border-border rounded-2xl overflow-hidden active:scale-[0.97] transition-transform shadow-sm flex-shrink-0"
-              >
-                <div className="h-20 bg-heritage-sand flex items-center justify-center text-3xl">
-                  {place.image}
-                </div>
-                <div className="p-3 text-right">
-                  <h3 className="font-heading text-xs font-semibold truncate">{place.name}</h3>
-                  <div className="flex items-center gap-1 mt-1 justify-end">
-                    <span className="text-[10px] text-muted-foreground">{place.rating}</span>
-                    <Star size={10} className="text-heritage-gold fill-heritage-gold" />
-                  </div>
-                </div>
-              </motion.button>
-            ));
-          })()}
-        </div>
+      {/* Riyadh dialect & customs experience box */}
+      <div className="px-5 mt-4">
+        <motion.button
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          onClick={() => navigate('/rawi?tab=chat&topic=dialect')}
+          className="w-full bg-gradient-to-br from-heritage-brown to-primary rounded-2xl p-4 text-right active:scale-[0.98] transition-transform shadow-md flex items-center gap-3"
+        >
+          <ChevronLeft size={18} className="text-primary-foreground/70 flex-shrink-0" />
+          <div className="flex-1 text-right">
+            <h3 className="font-heading font-bold text-sm text-primary-foreground">
+              تبي تعرف عن لهجة أهل الرياض وعاداتهم؟
+            </h3>
+            <p className="text-[11px] text-primary-foreground/80 mt-0.5">
+              تعال خُض التجربة مع الراوي
+            </p>
+          </div>
+          <div className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center flex-shrink-0">
+            <Sparkles size={18} className="text-primary-foreground" strokeWidth={1.7} />
+          </div>
+        </motion.button>
       </div>
     </div>
   );
