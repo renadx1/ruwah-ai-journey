@@ -244,7 +244,7 @@ export default function RawiPage() {
               <Plus size={18} strokeWidth={1.8} />
             </button>
           </div>
-          <button onClick={() => navigate(-1)} aria-label="رجوع">
+          <button onClick={() => navigate('/')} aria-label="رجوع للرئيسية">
             <ArrowRight size={22} className="text-heritage-brown" />
           </button>
         </div>

@@ -51,7 +51,7 @@ export default function LearnPage() {
       <div className="px-5 pt-12 pb-4">
         <div className="flex items-center justify-between mb-6">
           <div />
-          <button onClick={() => navigate(-1)}>
+          <button onClick={() => navigate('/')} aria-label="رجوع للرئيسية">
             <ArrowRight size={22} className="text-foreground" />
           </button>
         </div>
