@@ -1,4 +1,6 @@
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react';
+
+const TTS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rawi-tts`;
 
 type AccessibilityState = {
   largeText: boolean;
@@ -28,6 +30,8 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
   const [highContrast, setHighContrast] = useState(() => localStorage.getItem('a11y_contrast') === '1');
   const [voiceControl, setVoiceControl] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioUrlRef = useRef<string | null>(null);
 
   const largeText = textScale > 1.001;
 
@@ -53,20 +57,21 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = '';
+      audioRef.current = null;
+    }
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current);
+      audioUrlRef.current = null;
+    }
     setIsSpeaking(false);
   }, []);
 
-  const speak = useCallback((text: string) => {
-    if (!('speechSynthesis' in window)) {
-      alert('متصفحك لا يدعم القراءة الصوتية');
-      return;
-    }
+  const speakBrowserFallback = useCallback((cleaned: string) => {
+    if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
-    const cleaned = text
-      .replace(/\*\*/g, '')
-      .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '')
-      .trim();
-    if (!cleaned) return;
     const utter = new SpeechSynthesisUtterance(cleaned);
     utter.lang = 'ar-SA';
     utter.rate = 0.95;
@@ -75,6 +80,59 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
     window.speechSynthesis.speak(utter);
     setIsSpeaking(true);
   }, []);
+
+  const speak = useCallback(async (text: string) => {
+    const cleaned = text
+      .replace(/\*\*/g, '')
+      .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '')
+      .trim();
+    if (!cleaned) return;
+
+    // Stop any current playback first
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current);
+      audioUrlRef.current = null;
+    }
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+
+    setIsSpeaking(true);
+    try {
+      const resp = await fetch(TTS_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ text: cleaned }),
+      });
+      if (!resp.ok) throw new Error(`TTS HTTP ${resp.status}`);
+      const blob = await resp.blob();
+      if (!blob.type.startsWith('audio')) throw new Error('Invalid audio response');
+      const url = URL.createObjectURL(blob);
+      audioUrlRef.current = url;
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.onended = () => {
+        setIsSpeaking(false);
+        if (audioUrlRef.current) {
+          URL.revokeObjectURL(audioUrlRef.current);
+          audioUrlRef.current = null;
+        }
+      };
+      audio.onerror = () => {
+        setIsSpeaking(false);
+        speakBrowserFallback(cleaned);
+      };
+      await audio.play();
+    } catch (err) {
+      console.warn('Elm TTS failed, falling back to browser:', err);
+      speakBrowserFallback(cleaned);
+    }
+  }, [speakBrowserFallback]);
 
   // Voice control via Web Speech Recognition
   useEffect(() => {
