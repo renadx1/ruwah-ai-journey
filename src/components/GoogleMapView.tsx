@@ -2,7 +2,7 @@ import { useMemo, useCallback } from 'react';
 import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
 import { CulturalPlace } from '@/lib/mockData';
 
-const GOOGLE_MAPS_API_KEY = 'AIzaSyD4tjY0IBi2fHDKTgeH0FMun1moPepPHv8';
+const GOOGLE_MAPS_API_KEY = 'AIzaSyB__li1XnzJU765wUSkUiWai-p5G2h1UEk';
 
 const containerStyle = {
   width: '100%',
