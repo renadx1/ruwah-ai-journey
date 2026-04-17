@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Accessibility, X, Type, Contrast, Mic, Volume2, Plus, Minus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 import { useAccessibility } from '@/lib/accessibility';
 
 export default function AccessibilityFab() {
