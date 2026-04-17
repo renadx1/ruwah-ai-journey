@@ -223,7 +223,7 @@ export default function RawiPage() {
   };
 
   return (
-    <main className="min-h-screen pb-32 najdi-pattern flex flex-col" data-a11y-read>
+    <main className="relative min-h-screen pb-32 najdi-pattern flex flex-col" data-a11y-read>
       {/* Header */}
       <div className="px-5 pt-12 pb-3">
         <div className="flex items-center justify-between mb-4">
