@@ -158,3 +158,24 @@ html.a11y-high-contrast .najdi-pattern,
 html.a11y-high-contrast .najdi-pattern-strong {
   background-image: none !important;
 }
+
+/* ---- Heritage map (Leaflet) styling ---- */
+.heritage-tiles {
+  filter: sepia(0.15) saturate(1.05) hue-rotate(-8deg) brightness(1.02);
+}
+.leaflet-container {
+  font-family: 'Noto Kufi Arabic', sans-serif;
+}
+.heritage-tooltip {
+  background: hsl(var(--card)) !important;
+  color: hsl(var(--heritage-brown)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 9999px !important;
+  padding: 3px 10px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 6px rgba(107,68,35,0.15) !important;
+  white-space: nowrap;
+}
+.heritage-tooltip::before { display: none !important; }
+
