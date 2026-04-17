@@ -60,7 +60,37 @@ export default function Index() {
         </motion.div>
       </div>
 
-      {/* (Map preview removed — users go to /map via the bottom nav) */}
+      {/* 1) Map preview card — matches reference design exactly */}
+      <div className="px-5 -mt-4 relative z-10">
+        <motion.button
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          onClick={() => navigate('/map')}
+          className="w-full bg-heritage-sand rounded-2xl overflow-hidden shadow-md border border-border active:scale-[0.98] transition-transform"
+        >
+          <div className="h-32 relative flex items-center justify-center">
+            {/* Subtle scattered dots */}
+            <div className="absolute inset-0 opacity-40 pointer-events-none">
+              <div className="absolute w-1.5 h-1.5 rounded-full bg-heritage-brown/40" style={{ top: '40%', left: '25%' }} />
+              <div className="absolute w-1.5 h-1.5 rounded-full bg-heritage-brown/40" style={{ top: '65%', left: '55%' }} />
+              <div className="absolute w-1.5 h-1.5 rounded-full bg-heritage-brown/40" style={{ top: '30%', right: '30%' }} />
+            </div>
+            {/* Crescent decoration top-left */}
+            <div className="absolute top-3 left-4 w-8 h-8 rounded-full border-2 border-heritage-brown/15" />
+            {/* Centered pin + city */}
+            <div className="relative z-10 flex flex-col items-center gap-1.5">
+              <MapPin size={26} className="text-heritage-brown" strokeWidth={1.7} />
+              <span className="text-heritage-brown font-heading text-sm font-semibold">
+                {location.city}
+              </span>
+            </div>
+          </div>
+          <div className="p-3 flex items-center justify-between bg-card">
+            <ChevronLeft size={16} className="text-muted-foreground" />
+            <span className="text-muted-foreground text-xs font-heading">استكشف الخريطة</span>
+          </div>
+        </motion.button>
+      </div>
 
 
       {/* 2) Suggestions — text only, no photos */}
