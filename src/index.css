@@ -108,4 +108,26 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
+  .ruwat-input {
+    width: 100%;
+    background-color: hsl(var(--secondary));
+    border-radius: 0.75rem;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+    color: hsl(var(--foreground));
+    text-align: right;
+    outline: none;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+    font-family: var(--font-body);
+  }
+  .ruwat-input:focus {
+    border-color: hsl(var(--primary) / 0.4);
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
+  }
+  .ruwat-input::placeholder {
+    color: hsl(var(--muted-foreground));
+  }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { scrollbar-width: none; }
 }
