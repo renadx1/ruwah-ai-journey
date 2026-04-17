@@ -256,11 +256,16 @@ export default function RawiPage() {
           </div>
         </div>
 
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="font-heading text-2xl font-bold text-heritage-brown text-right">الراوي</h1>
-          <p className="text-muted-foreground text-sm mt-1 text-right">
-            مساعدك الذكي لاستكشاف تراث {location.city}
-          </p>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 justify-end">
+          <div className="text-right">
+            <h1 className="font-heading text-2xl font-bold text-heritage-brown">الراوي</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">
+              مساعدك الذكي لاستكشاف تراث {location.city}
+            </p>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-heritage-brown to-primary flex items-center justify-center shadow-md flex-shrink-0">
+            <Bot size={24} className="text-primary-foreground" strokeWidth={1.7} />
+          </div>
         </motion.div>
       </div>
 
