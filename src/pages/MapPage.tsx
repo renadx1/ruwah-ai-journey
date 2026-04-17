@@ -214,28 +214,57 @@ export default function MapPage() {
                 </p>
 
                 {/* Info chips */}
-                <div className="grid grid-cols-2 gap-2 mb-4 text-right" dir="rtl">
+                <div className="grid grid-cols-2 gap-2 mb-3 text-right" dir="rtl">
                   <InfoChip icon={<MapPin size={14} />} label={`${distance.toFixed(1)} كم عنك`} />
                   <InfoChip icon={<Star size={14} className="fill-heritage-brown" />} label={`تقييم ${selected.rating}`} />
                   <InfoChip icon={<Ticket size={14} />} label={selected.entryFee} />
                   <InfoChip icon={<Clock size={14} />} label={selected.openingHours} />
-                  <InfoChip
-                    icon={
-                      <span className="text-sm leading-none">{selected.accessible ? '♿' : '🚷'}</span>
-                    }
-                    label={selected.accessible ? 'يدعم الاحتياجات الخاصة' : 'لا يدعم الاحتياجات الخاصة'}
-                    highlight={selected.accessible}
-                    full
-                  />
                 </div>
 
-                <button
-                  onClick={() => navigate(`/rawi?tab=chat&place=${encodeURIComponent(selected.name)}`)}
-                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-br from-primary to-heritage-brown text-primary-foreground px-4 py-3 rounded-xl font-heading text-sm active:scale-[0.97] transition-transform"
-                >
-                  <MessageCircle size={16} />
-                  <span>اسأل الراوي عن هذا المكان</span>
-                </button>
+                {/* Accessibility section */}
+                <div className="bg-secondary/60 rounded-2xl p-3 mb-4 text-right" dir="rtl">
+                  <h3 className="font-heading font-semibold text-xs text-heritage-brown mb-2">
+                    معلومات إمكانية الوصول
+                  </h3>
+                  <div className="space-y-1.5 text-xs">
+                    <AccessRow
+                      label="كراسي متحركة"
+                      icon="♿"
+                      ok={selected.accessible}
+                    />
+                    <AccessRow
+                      label="مواقف خاصة"
+                      icon="🅿️"
+                      ok={selected.accessible}
+                    />
+                    <AccessRow
+                      label="مرافق مناسبة (دورات مياه)"
+                      icon="🚻"
+                      ok={selected.accessible}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      const text = `${selected.name}. ${selected.district}. ${selected.description}`;
+                      if (isSpeaking) stopSpeaking();
+                      else speak(text);
+                    }}
+                    aria-label="استمع"
+                    className="w-12 h-12 bg-secondary text-heritage-brown rounded-xl flex items-center justify-center active:scale-95 transition-transform border border-border flex-shrink-0"
+                  >
+                    <Volume2 size={18} className={isSpeaking ? 'text-primary' : ''} />
+                  </button>
+                  <button
+                    onClick={() => navigate(`/rawi?place=${encodeURIComponent(selected.name)}`)}
+                    className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-br from-primary to-heritage-brown text-primary-foreground px-4 py-3 rounded-xl font-heading text-sm active:scale-[0.97] transition-transform"
+                  >
+                    <MessageCircle size={16} />
+                    <span>اسأل الراوي عن هذا المكان</span>
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -262,9 +291,9 @@ export default function MapPage() {
               )}
             </div>
 
-            {/* Upload store entry */}
+            {/* Upload store entry — opens modal directly */}
             <button
-              onClick={() => navigate('/support')}
+              onClick={() => setShowUpload(true)}
               className="w-full mt-5 bg-gradient-to-br from-heritage-brown to-primary text-primary-foreground rounded-2xl p-4 flex items-center gap-3 text-right shadow-md active:scale-[0.98] transition-transform"
             >
               <div className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center flex-shrink-0">
@@ -279,6 +308,8 @@ export default function MapPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <StoreUploadModal open={showUpload} onClose={() => setShowUpload(false)} />
     </div>
   );
 }
