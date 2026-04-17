@@ -223,7 +223,7 @@ export default function RawiPage() {
   };
 
   return (
-    <main className="min-h-screen pb-32 najdi-pattern flex flex-col" data-a11y-read>
+    <main className="relative min-h-screen pb-32 najdi-pattern flex flex-col" data-a11y-read>
       {/* Header */}
       <div className="px-5 pt-12 pb-3">
         <div className="flex items-center justify-between mb-4">
@@ -410,40 +410,43 @@ export default function RawiPage() {
         </div>
       </div>
 
-      {/* Conversation history drawer */}
+      {/* Conversation history — inline panel within the mobile frame */}
       <AnimatePresence>
         {historyOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setHistoryOpen(false)}
-            className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm flex justify-end"
-          >
-            <motion.div
-              initial={{ x: -320 }}
-              animate={{ x: 0 }}
-              exit={{ x: -320 }}
-              onClick={(e) => e.stopPropagation()}
+          <>
+            {/* Dim only the page area below header, inside the frame */}
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setHistoryOpen(false)}
+              aria-label="إغلاق"
+              className="absolute inset-0 z-30 bg-black/30 backdrop-blur-[2px]"
+            />
+            <motion.aside
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -20, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 280, damping: 28 }}
               dir="rtl"
-              className="absolute right-0 top-0 bottom-0 w-[85%] max-w-sm bg-card border-l border-border flex flex-col shadow-2xl"
+              className="absolute top-[140px] left-3 right-3 z-40 max-h-[60vh] bg-card border border-border rounded-2xl shadow-xl flex flex-col overflow-hidden"
             >
-              <div className="flex items-center justify-between px-4 py-4 border-b border-border">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-secondary/40">
                 <button onClick={() => setHistoryOpen(false)} aria-label="إغلاق">
-                  <X size={20} className="text-muted-foreground" />
+                  <X size={18} className="text-muted-foreground" />
                 </button>
-                <h2 className="font-heading font-bold text-heritage-brown">المحادثات السابقة</h2>
+                <h2 className="font-heading font-bold text-sm text-heritage-brown">المحادثات السابقة</h2>
               </div>
 
               <button
                 onClick={newChat}
-                className="m-3 flex items-center justify-center gap-2 bg-gradient-to-br from-primary to-heritage-brown text-primary-foreground rounded-xl py-2.5 text-sm font-heading active:scale-[0.98] transition"
+                className="m-3 flex items-center justify-center gap-2 bg-gradient-to-br from-primary to-heritage-brown text-primary-foreground rounded-xl py-2 text-sm font-heading active:scale-[0.98] transition"
               >
-                <Plus size={16} />
+                <Plus size={14} />
                 محادثة جديدة
               </button>
 
-              <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-2">
+              <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-2">
                 {conversations.length === 0 && (
                   <p className="text-center text-muted-foreground text-sm py-8">
                     لا توجد محادثات سابقة بعد
@@ -454,7 +457,7 @@ export default function RawiPage() {
                   return (
                     <div
                       key={c.id}
-                      className={`group flex items-center gap-2 rounded-xl border p-3 transition ${
+                      className={`group flex items-center gap-2 rounded-xl border p-2.5 transition ${
                         isActive
                           ? 'bg-secondary border-heritage-brown/40'
                           : 'bg-card border-border hover:bg-secondary/60'
@@ -483,8 +486,8 @@ export default function RawiPage() {
                   );
                 })}
               </div>
-            </motion.div>
-          </motion.div>
+            </motion.aside>
+          </>
         )}
       </AnimatePresence>
     </main>
