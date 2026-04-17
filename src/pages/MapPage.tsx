@@ -85,7 +85,6 @@ export default function MapPage() {
           <span className="text-[11px] font-heading text-heritage-brown">{userLoc.city}</span>
         </div>
       </div>
-      </div>
 
       {/* Bottom sheet: list or detail */}
       <AnimatePresence mode="wait">
