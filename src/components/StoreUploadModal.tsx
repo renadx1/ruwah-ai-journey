@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, X } from 'lucide-react';
+import { Check, X, Accessibility, ParkingSquare, Bath } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function StoreUploadModal({
@@ -15,7 +15,9 @@ export default function StoreUploadModal({
     district: '',
     description: '',
     fee: '',
-    accessible: false,
+    wheelchair: false,
+    parking: false,
+    restroom: false,
     photos: '',
   });
 
@@ -24,7 +26,16 @@ export default function StoreUploadModal({
     setSubmitted(true);
     setTimeout(() => {
       setSubmitted(false);
-      setForm({ name: '', district: '', description: '', fee: '', accessible: false, photos: '' });
+      setForm({
+        name: '',
+        district: '',
+        description: '',
+        fee: '',
+        wheelchair: false,
+        parking: false,
+        restroom: false,
+        photos: '',
+      });
       onClose();
     }, 1800);
   };
@@ -105,15 +116,31 @@ export default function StoreUploadModal({
                     className="ruwat-input"
                   />
                 </Field>
-                <label className="flex items-center justify-between gap-3 bg-secondary rounded-xl px-4 py-3">
-                  <span className="text-sm font-heading text-heritage-brown">يدعم الاحتياجات الخاصة ♿</span>
-                  <input
-                    type="checkbox"
-                    checked={form.accessible}
-                    onChange={(e) => setForm({ ...form, accessible: e.target.checked })}
-                    className="w-5 h-5 accent-primary"
+
+                {/* Accessibility options — owner selects what's available */}
+                <div className="bg-secondary/60 rounded-2xl p-3 space-y-2">
+                  <h3 className="font-heading font-semibold text-xs text-heritage-brown mb-1">
+                    إمكانية الوصول (اختر المتوفر لديك)
+                  </h3>
+                  <AccessOption
+                    label="كراسي متحركة"
+                    icon={<Accessibility size={16} className="text-heritage-brown" strokeWidth={1.7} />}
+                    checked={form.wheelchair}
+                    onChange={(v) => setForm({ ...form, wheelchair: v })}
                   />
-                </label>
+                  <AccessOption
+                    label="مواقف خاصة"
+                    icon={<ParkingSquare size={16} className="text-heritage-brown" strokeWidth={1.7} />}
+                    checked={form.parking}
+                    onChange={(v) => setForm({ ...form, parking: v })}
+                  />
+                  <AccessOption
+                    label="مرافق مناسبة (دورات مياه)"
+                    icon={<Bath size={16} className="text-heritage-brown" strokeWidth={1.7} />}
+                    checked={form.restroom}
+                    onChange={(v) => setForm({ ...form, restroom: v })}
+                  />
+                </div>
 
                 <button
                   onClick={handleSubmit}
@@ -137,5 +164,32 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <label className="block text-xs font-heading text-heritage-brown mb-1.5">{label}</label>
       {children}
     </div>
+  );
+}
+
+function AccessOption({
+  label,
+  icon,
+  checked,
+  onChange,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <label className="flex items-center justify-between gap-3 bg-card rounded-xl px-3 py-2 cursor-pointer border border-border" dir="rtl">
+      <div className="flex items-center gap-2">
+        <span className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center">{icon}</span>
+        <span className="text-xs font-heading text-heritage-brown">{label}</span>
+      </div>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="w-5 h-5 accent-primary"
+      />
+    </label>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ArrowRight, MapPin, Star, MessageCircle, X, Search, Clock, Ticket, Store, Plus, Volume2, Navigation, Landmark, Castle, Building2, ShoppingBag } from 'lucide-react';
+import { ArrowRight, MapPin, Star, MessageCircle, X, Search, Clock, Ticket, Store, Plus, Volume2, Navigation, Landmark, Castle, Building2, ShoppingBag, Accessibility, ParkingSquare, Bath } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { culturalPlaces, CulturalPlace, distanceKm } from '@/lib/mockData';
@@ -148,17 +148,17 @@ export default function MapPage() {
                   <div className="space-y-1.5 text-xs">
                     <AccessRow
                       label="كراسي متحركة"
-                      icon="♿"
+                      icon={<Accessibility size={16} className="text-heritage-brown" strokeWidth={1.7} />}
                       ok={selected.accessible}
                     />
                     <AccessRow
                       label="مواقف خاصة"
-                      icon="🅿️"
+                      icon={<ParkingSquare size={16} className="text-heritage-brown" strokeWidth={1.7} />}
                       ok={selected.accessible}
                     />
                     <AccessRow
                       label="مرافق مناسبة (دورات مياه)"
-                      icon="🚻"
+                      icon={<Bath size={16} className="text-heritage-brown" strokeWidth={1.7} />}
                       ok={selected.accessible}
                     />
                   </div>
@@ -258,7 +258,7 @@ function InfoChip({
   );
 }
 
-function AccessRow({ label, icon, ok }: { label: string; icon: string; ok: boolean }) {
+function AccessRow({ label, icon, ok }: { label: string; icon: React.ReactNode; ok: boolean }) {
   return (
     <div className="flex items-center justify-between">
       <span className={`text-[11px] font-heading ${ok ? 'text-heritage-brown' : 'text-muted-foreground line-through'}`}>
@@ -266,7 +266,7 @@ function AccessRow({ label, icon, ok }: { label: string; icon: string; ok: boole
       </span>
       <div className="flex items-center gap-2">
         <span className="text-heritage-brown text-xs">{label}</span>
-        <span className="text-base">{icon}</span>
+        <span className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center">{icon}</span>
       </div>
     </div>
   );
