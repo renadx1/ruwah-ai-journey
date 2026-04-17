@@ -256,12 +256,32 @@ export default function RawiPage() {
         )}
       </div>
 
-      {/* Input bar with mic */}
+      {/* Input bar with mic + attachments */}
       <div className="px-4 pt-2 pb-3 bg-card/95 backdrop-blur border-t border-border sticky bottom-24">
+        {attachments.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-2" dir="rtl">
+            {attachments.map((f, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-1.5 bg-secondary rounded-full pr-3 pl-1 py-1 text-xs text-heritage-brown max-w-[180px]"
+              >
+                <Paperclip size={12} />
+                <span className="truncate">{f.name}</span>
+                <button
+                  onClick={() => removeAttachment(i)}
+                  className="w-5 h-5 rounded-full bg-card flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition"
+                  aria-label="إزالة"
+                >
+                  <X size={10} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
         <div className="flex items-center gap-2">
           <button
             onClick={() => handleSend()}
-            disabled={!input.trim() || isTyping}
+            disabled={(!input.trim() && attachments.length === 0) || isTyping}
             className="w-10 h-10 bg-gradient-to-br from-primary to-heritage-brown text-primary-foreground rounded-full flex items-center justify-center disabled:opacity-40 active:scale-95 transition-transform flex-shrink-0"
             aria-label="إرسال"
           >
@@ -274,6 +294,21 @@ export default function RawiPage() {
             placeholder="اسأل الراوي عن التراث..."
             className="flex-1 bg-secondary rounded-full px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 transition text-right font-body"
           />
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="image/*,.pdf,.txt,.doc,.docx"
+            onChange={handleFiles}
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0 border bg-card text-heritage-brown border-border active:scale-95"
+            aria-label="إرفاق ملف"
+          >
+            <Paperclip size={16} strokeWidth={1.7} />
+          </button>
           <button
             onClick={toggleRecording}
             className={`w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0 border ${
