@@ -1,4 +1,4 @@
-import { Home, Map, BookOpen, User, LifeBuoy } from 'lucide-react';
+import { Home, Map, BookOpen, User, Headphones } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 // Side tabs (RTL): right side first, then left side. Center is Home (raised).
@@ -8,7 +8,7 @@ const sideTabs = [
   { path: '/rawi', icon: BookOpen, label: 'الراوي' },
   // Left side
   { path: '/map', icon: Map, label: 'الخريطة' },
-  { path: '/support', icon: LifeBuoy, label: 'الدعم' },
+  { path: '/support', icon: Headphones, label: 'الدعم' },
 ];
 
 export default function BottomNav() {
