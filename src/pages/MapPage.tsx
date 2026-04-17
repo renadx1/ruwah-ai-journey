@@ -44,45 +44,68 @@ export default function MapPage() {
 
   return (
     <div className="min-h-screen pb-32 bg-background">
-      {/* Stylized Najdi-pattern map area (old design) */}
-      <div className="relative h-[42vh] bg-heritage-sand overflow-hidden najdi-pattern-strong">
-        {/* Decorative pins scattered on the pattern */}
+      {/* Simple stylized map area — clean sand background with subtle pin dots and centered city */}
+      <div className="relative h-[42vh] bg-heritage-sand overflow-hidden">
+        {/* Decorative scattered dots (subtle, like reference image) */}
+        <div className="absolute inset-0 opacity-50">
+          {[
+            { top: '22%', left: '18%' },
+            { top: '35%', left: '70%' },
+            { top: '60%', left: '30%' },
+            { top: '70%', left: '78%' },
+            { top: '45%', left: '12%' },
+          ].map((pos, i) => (
+            <div
+              key={i}
+              style={pos}
+              className="absolute w-2 h-2 rounded-full bg-heritage-brown/40"
+            />
+          ))}
+        </div>
+
+        {/* Crescent decoration top-left (subtle) */}
+        <div className="absolute top-6 left-8 w-10 h-10 rounded-full border-2 border-heritage-brown/15" />
+
+        {/* Centered city pin & label */}
+        <button
+          onClick={() => setSelected(null)}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1.5 group"
+        >
+          <MapPin size={32} className="text-heritage-brown" strokeWidth={1.7} />
+          <span className="text-heritage-brown text-base font-heading font-bold">
+            {userLoc.city}
+          </span>
+        </button>
+
+        {/* Hidden pin buttons over the dots so all places stay clickable */}
         <div className="absolute inset-0">
-          {filtered.slice(0, 6).map((p, i) => {
+          {filtered.map((p, i) => {
             const positions = [
-              { top: '25%', left: '20%' },
-              { top: '40%', left: '60%' },
-              { top: '55%', left: '35%' },
-              { top: '30%', left: '75%' },
-              { top: '65%', left: '70%' },
-              { top: '70%', left: '15%' },
+              { top: '20%', right: '18%' },
+              { top: '32%', left: '15%' },
+              { top: '58%', right: '28%' },
+              { top: '68%', left: '22%' },
+              { top: '40%', right: '8%' },
+              { top: '75%', right: '50%' },
             ];
+            const pos = positions[i % positions.length];
             const isSel = selected?.id === p.id;
             return (
               <button
                 key={p.id}
                 onClick={() => setSelected(p)}
-                style={positions[i]}
-                className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group"
+                style={pos}
+                aria-label={p.name}
+                className={`absolute -translate-x-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center transition-all ${
+                  isSel
+                    ? 'bg-heritage-brown shadow-md scale-110'
+                    : 'bg-transparent hover:bg-heritage-brown/10'
+                }`}
               >
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center shadow-md ring-2 ring-card transition-transform ${
-                  isSel ? 'bg-heritage-brown scale-110' : 'bg-primary'
-                }`}>
-                  <MapPin size={16} className="text-primary-foreground" strokeWidth={2} />
-                </div>
-                <span className="mt-1 text-[10px] font-heading text-heritage-brown bg-card/90 backdrop-blur px-1.5 py-0.5 rounded-full whitespace-nowrap shadow-sm">
-                  {p.name.split(' ').slice(0, 2).join(' ')}
-                </span>
+                {isSel && <MapPin size={14} className="text-primary-foreground" strokeWidth={2} />}
               </button>
             );
           })}
-        </div>
-
-        {/* City label center */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-          <div className="bg-card/80 backdrop-blur rounded-full px-3 py-1 border border-border">
-            <span className="text-heritage-brown text-xs font-heading font-bold">{userLoc.city}</span>
-          </div>
         </div>
 
         {/* Top overlay: back + search bar */}
