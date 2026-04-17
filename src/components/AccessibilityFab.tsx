@@ -33,21 +33,21 @@ export default function AccessibilityFab() {
 
   return (
     <>
-      {/* Accessibility button — pinned to the mobile frame's top-left, blends like a header chip */}
+      {/* Accessibility button — solid white pill, pinned to the mobile frame's top-right corner */}
       <div className="fixed top-0 left-0 right-0 z-[60] pointer-events-none flex justify-center">
         <div className="w-full max-w-lg relative h-0">
           <button
             onClick={() => setOpen(true)}
             aria-label="إعدادات إمكانية الوصول"
-            className={`pointer-events-auto absolute top-[52px] left-5 w-10 h-10 rounded-full backdrop-blur-sm border flex items-center justify-center transition-colors ${
+            className={`pointer-events-auto absolute top-3 right-3 w-10 h-10 rounded-full border flex items-center justify-center transition-colors shadow-lg ${
               anyActive
-                ? 'bg-heritage-brown text-primary-foreground border-heritage-brown shadow-md'
-                : 'bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30 hover:bg-primary-foreground/30'
+                ? 'bg-heritage-brown text-primary-foreground border-heritage-brown'
+                : 'bg-card text-heritage-brown border-border'
             }`}
           >
-            <Accessibility size={18} strokeWidth={2} />
+            <Accessibility size={20} strokeWidth={2} />
             {anyActive && (
-              <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-primary border-2 border-background" />
+              <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-primary border-2 border-card" />
             )}
           </button>
         </div>
