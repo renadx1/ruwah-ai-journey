@@ -67,8 +67,10 @@ export default function RawiPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const [attachments, setAttachments] = useState<File[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const dialectFired = useRef(false);
 
   useEffect(() => {
@@ -77,16 +79,32 @@ export default function RawiPage() {
 
   const handleSend = async (forced?: string) => {
     const text = (forced ?? input).trim();
-    if (!text || isTyping) return;
-    const userMsg: Message = { id: Date.now().toString(), role: 'user', content: text };
+    const hasFiles = attachments.length > 0;
+    if ((!text && !hasFiles) || isTyping) return;
+    const fileNote = hasFiles ? `\n\n📎 ${attachments.map((f) => f.name).join('، ')}` : '';
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: (text || 'أرسلت ملف للتحليل') + fileNote,
+    };
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
+    setAttachments([]);
     setIsTyping(true);
-    const response = await getAIResponse(text, placeName || undefined);
+    const response = await getAIResponse(text || 'ملف', placeName || undefined);
     setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: response }]);
     setIsTyping(false);
     addPoints(2);
   };
+
+  const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setAttachments((prev) => [...prev, ...files].slice(0, 4));
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeAttachment = (idx: number) =>
+    setAttachments((prev) => prev.filter((_, i) => i !== idx));
 
   // Auto-trigger dialect prompt
   useEffect(() => {
