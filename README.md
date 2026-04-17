@@ -14,6 +14,7 @@
 - **Adobe Illustrator** — الأيقونات والرسوميات
 
 ## التقنيات
+- **Visual Studio Code** — بيئة التطوير
 - **React + TypeScript** — واجهة المستخدم
 - **Vite** — أداة البناء والتطوير
 - **Tailwind CSS** — التنسيق والتصميم
