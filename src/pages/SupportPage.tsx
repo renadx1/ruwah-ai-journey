@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { ArrowRight, Mail, MessageCircle, Phone, HelpCircle, Headset, Store, Plus } from 'lucide-react';
+import { ArrowRight, Mail, MessageCircle, Phone, HelpCircle, Headset } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import StoreUploadModal from '@/components/StoreUploadModal';
 
 const channels = [
   { icon: Mail, title: 'البريد الإلكتروني', value: 'support@ruwat.sa', href: 'mailto:support@ruwat.sa' },
@@ -21,7 +20,6 @@ const faqs = [
 
 export default function SupportPage() {
   const navigate = useNavigate();
-  const [showForm, setShowForm] = useState(false);
 
   return (
     <main className="min-h-screen pb-32 najdi-pattern" data-a11y-read>
@@ -89,25 +87,8 @@ export default function SupportPage() {
         </div>
       </div>
 
-      <div className="px-5 mt-7">
-        <motion.button
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          onClick={() => setShowForm(true)}
-          className="w-full bg-gradient-to-br from-heritage-brown to-primary rounded-2xl p-4 flex items-center gap-3 text-right shadow-md active:scale-[0.98] transition-transform"
-        >
-          <div className="w-11 h-11 rounded-full bg-primary-foreground/20 flex items-center justify-center flex-shrink-0">
-            <Store size={20} strokeWidth={1.7} className="text-primary-foreground" />
-          </div>
-          <div className="flex-1 text-right">
-            <h3 className="font-heading font-bold text-sm text-primary-foreground">رفع المتاجر الثقافية</h3>
-            <p className="text-[11px] text-primary-foreground/80 mt-0.5">سجّل متجرك وظهر في الخريطة</p>
-          </div>
-          <Plus size={18} className="text-primary-foreground" />
-        </motion.button>
-      </div>
-
-      <StoreUploadModal open={showForm} onClose={() => setShowForm(false)} />
     </main>
+  );
+}
   );
 }

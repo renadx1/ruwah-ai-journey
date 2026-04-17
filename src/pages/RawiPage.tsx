@@ -236,19 +236,6 @@ export default function RawiPage() {
             ))}
           </div>
         )}
-              <div className="flex gap-1">
-                {[0, 1, 2].map((i) => (
-                  <motion.div
-                    key={i}
-                    className="w-2 h-2 bg-heritage-brown/60 rounded-full"
-                    animate={{ y: [0, -5, 0] }}
-                    transition={{ repeat: Infinity, duration: 0.6, delay: i * 0.15 }}
-                  />
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        )}
       </div>
 
       {/* Input bar with mic */}
