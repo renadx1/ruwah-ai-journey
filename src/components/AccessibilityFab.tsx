@@ -33,19 +33,19 @@ export default function AccessibilityFab() {
 
   return (
     <>
-      {/* Floating top-right accessibility button — visible on every page */}
+      {/* Accessibility button — sits inside page header, top-left, blends with header chips */}
       <button
         onClick={() => setOpen(true)}
         aria-label="إعدادات إمكانية الوصول"
-        className={`fixed top-3 right-3 z-[55] w-12 h-12 rounded-full shadow-lg backdrop-blur-md border flex items-center justify-center transition-colors ${
+        className={`fixed top-12 left-5 z-[55] w-9 h-9 rounded-full backdrop-blur-sm border flex items-center justify-center transition-colors ${
           anyActive
-            ? 'bg-heritage-brown text-primary-foreground border-heritage-brown'
-            : 'bg-card/95 text-heritage-brown border-border'
+            ? 'bg-heritage-brown text-primary-foreground border-heritage-brown shadow-md'
+            : 'bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30 hover:bg-primary-foreground/30'
         }`}
       >
-        <Accessibility size={22} strokeWidth={1.8} />
+        <Accessibility size={16} strokeWidth={2} />
         {anyActive && (
-          <span className="absolute -top-1 -left-1 w-3 h-3 rounded-full bg-primary border-2 border-card" />
+          <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-primary border-2 border-card" />
         )}
       </button>
 
