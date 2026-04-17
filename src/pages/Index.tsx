@@ -113,9 +113,9 @@ export default function Index() {
 
       {/* Personalized suggestions */}
       <div className="px-5 mt-6">
-        <div className="flex items-baseline justify-between mb-3">
-          <span className="text-[10px] text-muted-foreground font-heading">مختارة بناءً على اهتماماتك</span>
+        <div className="flex items-baseline justify-between mb-3" dir="rtl">
           <h2 className="font-heading font-bold text-foreground">اقتراحات مخصصة لك</h2>
+          <span className="text-[10px] text-muted-foreground font-heading">مختارة بناءً على اهتماماتك</span>
         </div>
         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide" style={{ direction: 'rtl' }}>
           {(() => {
