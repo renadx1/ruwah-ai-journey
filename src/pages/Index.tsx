@@ -65,32 +65,25 @@ export default function Index() {
         </motion.div>
       </div>
 
-      {/* 1) Map preview card — matches reference design exactly */}
+      {/* 1) Live map preview — light & airy */}
       <div className="px-5 -mt-4 relative z-10">
         <motion.button
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           onClick={() => navigate('/map')}
-          className="w-full bg-heritage-sand rounded-2xl overflow-hidden shadow-md border border-border active:scale-[0.98] transition-transform"
+          className="w-full bg-card rounded-2xl overflow-hidden shadow-md border border-border active:scale-[0.98] transition-transform"
         >
-          <div className="h-32 relative flex items-center justify-center">
-            {/* Subtle scattered dots */}
-            <div className="absolute inset-0 opacity-40 pointer-events-none">
-              <div className="absolute w-1.5 h-1.5 rounded-full bg-heritage-brown/40" style={{ top: '40%', left: '25%' }} />
-              <div className="absolute w-1.5 h-1.5 rounded-full bg-heritage-brown/40" style={{ top: '65%', left: '55%' }} />
-              <div className="absolute w-1.5 h-1.5 rounded-full bg-heritage-brown/40" style={{ top: '30%', right: '30%' }} />
-            </div>
-            {/* Crescent decoration top-left */}
-            <div className="absolute top-3 left-4 w-8 h-8 rounded-full border-2 border-heritage-brown/15" />
-            {/* Centered pin + city */}
-            <div className="relative z-10 flex flex-col items-center gap-1.5">
-              <MapPin size={26} className="text-heritage-brown" strokeWidth={1.7} />
-              <span className="text-heritage-brown font-heading text-sm font-semibold">
+          <div className="h-32 relative pointer-events-none">
+            <HomeMapPreview userLocation={location} />
+            {/* City label overlay */}
+            <div className="absolute top-2 right-2 bg-card/90 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1 shadow-sm">
+              <span className="text-heritage-brown font-heading text-[11px] font-semibold">
                 {location.city}
               </span>
+              <MapPin size={11} className="text-heritage-brown" strokeWidth={2} />
             </div>
           </div>
-          <div className="p-3 flex items-center justify-between bg-card">
+          <div className="p-3 flex items-center justify-between bg-card border-t border-border">
             <ChevronLeft size={16} className="text-muted-foreground" />
             <span className="text-muted-foreground text-xs font-heading">استكشف الخريطة</span>
           </div>
