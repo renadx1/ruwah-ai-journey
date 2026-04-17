@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react';
-import { ArrowRight, MapPin, Star, MessageCircle, X, Search, Clock, Ticket, Store, Plus, Volume2 } from 'lucide-react';
+import { ArrowRight, MapPin, Star, MessageCircle, X, Search, Clock, Ticket, Store, Plus, Volume2, Navigation } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { culturalPlaces, CulturalPlace, distanceKm } from '@/lib/mockData';
 import { useLocation } from '@/lib/useStore';
 import { useAccessibility } from '@/lib/accessibility';
 import StoreUploadModal from '@/components/StoreUploadModal';
+import GoogleMapView from '@/components/GoogleMapView';
 
 const categoryLabels: Record<string, string> = {
   museum: 'متحف',
@@ -44,69 +45,14 @@ export default function MapPage() {
 
   return (
     <div className="min-h-screen pb-32 bg-background">
-      {/* Simple stylized map area — clean sand background with subtle pin dots and centered city */}
+      {/* Real Google Map area */}
       <div className="relative h-[42vh] bg-heritage-sand overflow-hidden">
-        {/* Decorative scattered dots (subtle, like reference image) */}
-        <div className="absolute inset-0 opacity-50">
-          {[
-            { top: '22%', left: '18%' },
-            { top: '35%', left: '70%' },
-            { top: '60%', left: '30%' },
-            { top: '70%', left: '78%' },
-            { top: '45%', left: '12%' },
-          ].map((pos, i) => (
-            <div
-              key={i}
-              style={pos}
-              className="absolute w-2 h-2 rounded-full bg-heritage-brown/40"
-            />
-          ))}
-        </div>
-
-        {/* Crescent decoration top-left (subtle) */}
-        <div className="absolute top-6 left-8 w-10 h-10 rounded-full border-2 border-heritage-brown/15" />
-
-        {/* Centered city pin & label */}
-        <button
-          onClick={() => setSelected(null)}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1.5 group"
-        >
-          <MapPin size={32} className="text-heritage-brown" strokeWidth={1.7} />
-          <span className="text-heritage-brown text-base font-heading font-bold">
-            {userLoc.city}
-          </span>
-        </button>
-
-        {/* Hidden pin buttons over the dots so all places stay clickable */}
-        <div className="absolute inset-0">
-          {filtered.map((p, i) => {
-            const positions = [
-              { top: '20%', right: '18%' },
-              { top: '32%', left: '15%' },
-              { top: '58%', right: '28%' },
-              { top: '68%', left: '22%' },
-              { top: '40%', right: '8%' },
-              { top: '75%', right: '50%' },
-            ];
-            const pos = positions[i % positions.length];
-            const isSel = selected?.id === p.id;
-            return (
-              <button
-                key={p.id}
-                onClick={() => setSelected(p)}
-                style={pos}
-                aria-label={p.name}
-                className={`absolute -translate-x-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center transition-all ${
-                  isSel
-                    ? 'bg-heritage-brown shadow-md scale-110'
-                    : 'bg-transparent hover:bg-heritage-brown/10'
-                }`}
-              >
-                {isSel && <MapPin size={14} className="text-primary-foreground" strokeWidth={2} />}
-              </button>
-            );
-          })}
-        </div>
+        <GoogleMapView
+          places={filtered}
+          userLocation={{ lat: userLoc.lat, lng: userLoc.lng }}
+          selectedId={selected?.id}
+          onSelectPlace={(p) => setSelected(p)}
+        />
 
         {/* Top overlay: back (left) + search bar (right) */}
         <div className="absolute top-0 left-0 right-0 z-20 px-4 pt-12 pb-3 flex items-center gap-2">
@@ -131,6 +77,12 @@ export default function MapPage() {
               </button>
             )}
           </div>
+        </div>
+
+        {/* Current city badge */}
+        <div className="absolute bottom-3 right-3 z-10 bg-card/95 backdrop-blur rounded-full px-3 py-1.5 shadow-md border border-border flex items-center gap-1.5">
+          <MapPin size={12} className="text-heritage-brown" />
+          <span className="text-[11px] font-heading text-heritage-brown">{userLoc.city}</span>
         </div>
       </div>
 
