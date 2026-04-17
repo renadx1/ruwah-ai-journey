@@ -59,7 +59,8 @@ export default function HomeMapPreview({ userLocation }: Props) {
       options={{
         styles: mapStyles,
         disableDefaultUI: true,
-        gestureHandling: 'none',
+        zoomControl: true,
+        gestureHandling: 'greedy',
         clickableIcons: false,
         keyboardShortcuts: false,
       }}
