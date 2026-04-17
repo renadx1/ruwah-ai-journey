@@ -12,14 +12,13 @@ export default function Index() {
 
   const displayName = name || 'ضيفنا';
 
-  // Personalized suggestions: places sorted by distance from user
   const suggestions = [...culturalPlaces]
     .map((p) => ({ ...p, dist: distanceKm(location.lat, location.lng, p.lat, p.lng) }))
     .sort((a, b) => a.dist - b.dist)
-    .slice(0, 5);
+    .slice(0, 6);
 
   return (
-    <div className="min-h-screen pb-32 najdi-pattern">
+    <main className="min-h-screen pb-32 najdi-pattern" data-a11y-read>
       {/* Header */}
       <div className="gradient-heritage px-5 pt-12 pb-8 rounded-b-3xl">
         <div className="flex items-center justify-between mb-6">
@@ -61,66 +60,21 @@ export default function Index() {
         </motion.div>
       </div>
 
-      {/* Personalized suggestions — moved ABOVE "اكتشف" */}
+      {/* 1) Map preview — directly after points */}
       <div className="px-5 mt-6">
-        <div className="flex items-baseline justify-between mb-3" dir="rtl">
-          <h2 className="font-heading font-bold text-foreground">اقتراحات أماكن سياحية في الرياض</h2>
-        </div>
-        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide" style={{ direction: 'rtl' }}>
-          {suggestions.map((place, i) => (
-            <motion.button
-              key={place.id}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 + i * 0.08 }}
-              onClick={() => navigate(`/map?place=${place.id}`)}
-              className="min-w-[180px] bg-card border border-border rounded-2xl overflow-hidden active:scale-[0.97] transition-transform shadow-sm flex-shrink-0 text-right"
-            >
-              <div className="h-24 bg-heritage-sand overflow-hidden relative">
-                <img
-                  src={place.photos[0]}
-                  alt={place.name}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).style.display = 'none';
-                  }}
-                />
-                <div className="absolute top-2 right-2 bg-card/90 backdrop-blur rounded-full px-2 py-0.5 flex items-center gap-1">
-                  <span className="text-[10px] font-heading text-heritage-brown">
-                    {place.dist.toFixed(1)} كم
-                  </span>
-                </div>
-              </div>
-              <div className="p-3">
-                <h3 className="font-heading text-xs font-semibold truncate text-heritage-brown">
-                  {place.name}
-                </h3>
-                <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{place.district}</p>
-                <div className="flex items-center gap-1 mt-1.5 justify-end">
-                  <span className="text-[10px] text-muted-foreground">{place.rating}</span>
-                  <Star size={10} className="text-heritage-brown fill-heritage-brown" />
-                </div>
-              </div>
-            </motion.button>
-          ))}
-        </div>
-      </div>
-
-      {/* Map Preview - الخريطة (اكتشف) */}
-      <div className="px-5 mt-6">
-        <h2 className="font-heading font-bold text-foreground mb-3">اكتشف</h2>
+        <h2 className="font-heading font-bold text-heritage-brown mb-3 text-right">الخريطة</h2>
         <motion.button
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
           onClick={() => navigate('/map')}
           className="w-full bg-card rounded-2xl overflow-hidden shadow-md border border-border active:scale-[0.98] transition-transform"
         >
           <div className="h-32 bg-heritage-sand relative flex items-center justify-center najdi-pattern-strong">
             <div className="relative z-10 flex flex-col items-center gap-2">
               <MapPin size={28} className="text-heritage-brown" strokeWidth={1.7} />
-              <span className="text-heritage-brown font-heading text-sm font-semibold">{location.city}</span>
+              <span className="text-heritage-brown font-heading text-sm font-semibold">
+                {location.city}
+              </span>
             </div>
           </div>
           <div className="p-3 flex items-center justify-between">
@@ -130,13 +84,47 @@ export default function Index() {
         </motion.button>
       </div>
 
-      {/* Riyadh dialect & customs experience box */}
-      <div className="px-5 mt-4">
+      {/* 2) Suggestions — text only, no photos */}
+      <div className="px-5 mt-6">
+        <h2 className="font-heading font-bold text-heritage-brown mb-3 text-right">
+          اقتراحات أماكن سياحية لك في الرياض
+        </h2>
+        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide" style={{ direction: 'rtl' }}>
+          {suggestions.map((place, i) => (
+            <motion.button
+              key={place.id}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 + i * 0.06 }}
+              onClick={() => navigate(`/map?place=${place.id}`)}
+              className="min-w-[200px] bg-card border border-border rounded-2xl p-4 active:scale-[0.97] transition-transform shadow-sm flex-shrink-0 text-right"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
+                  {place.dist.toFixed(1)} كم
+                </span>
+                <MapPin size={16} className="text-heritage-brown" strokeWidth={1.7} />
+              </div>
+              <h3 className="font-heading text-sm font-bold text-heritage-brown leading-snug">
+                {place.name}
+              </h3>
+              <p className="text-[11px] text-muted-foreground mt-1">{place.district}</p>
+              <div className="flex items-center gap-1 mt-2 justify-end">
+                <span className="text-[10px] text-muted-foreground">{place.rating}</span>
+                <Star size={10} className="text-heritage-brown fill-heritage-brown" />
+              </div>
+            </motion.button>
+          ))}
+        </div>
+      </div>
+
+      {/* 3) Riyadh dialect & customs experience */}
+      <div className="px-5 mt-6">
         <motion.button
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          onClick={() => navigate('/rawi?tab=chat&topic=dialect')}
+          transition={{ delay: 0.3 }}
+          onClick={() => navigate('/rawi?topic=dialect')}
           className="w-full bg-gradient-to-br from-heritage-brown to-primary rounded-2xl p-4 text-right active:scale-[0.98] transition-transform shadow-md flex items-center gap-3"
         >
           <ChevronLeft size={18} className="text-primary-foreground/70 flex-shrink-0" />
@@ -153,6 +141,6 @@ export default function Index() {
           </div>
         </motion.button>
       </div>
-    </div>
+    </main>
   );
 }
