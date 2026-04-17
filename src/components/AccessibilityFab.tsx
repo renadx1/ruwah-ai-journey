@@ -36,27 +36,21 @@ export default function AccessibilityFab() {
   // Hide on /map (already busy with back arrow + search overlay)
   if (location.pathname === '/map') return null;
 
-  // Per-page positioning so the button sits naturally in the header without overlapping content.
-  // Home: aligned with the city chip (which is on the right) — button on the LEFT at the same row.
-  // Other pages: aligned with the back arrow row on the LEFT.
-  const isHome = location.pathname === '/';
-  const topClass = isHome ? 'top-12' : 'top-12';
-
   return (
     <>
-      {/* Accessibility button — solid white circle, left side, aligned with each page's header row */}
+      {/* Accessibility button — pinned to the very top edge of the mobile frame so it never overlaps headers */}
       <div className="fixed top-0 left-0 right-0 z-[60] pointer-events-none flex justify-center">
         <div className="w-full max-w-lg relative h-0">
           <button
             onClick={() => setOpen(true)}
             aria-label="إعدادات إمكانية الوصول"
-            className={`pointer-events-auto absolute ${topClass} left-5 w-10 h-10 rounded-full border flex items-center justify-center transition-colors shadow-md ${
+            className={`pointer-events-auto absolute top-2 left-2 w-9 h-9 rounded-full border flex items-center justify-center transition-colors shadow-md ${
               anyActive
                 ? 'bg-heritage-brown text-primary-foreground border-heritage-brown'
                 : 'bg-card text-heritage-brown border-border'
             }`}
           >
-            <Accessibility size={20} strokeWidth={2} />
+            <Accessibility size={18} strokeWidth={2} />
             {anyActive && (
               <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-primary border-2 border-card" />
             )}
