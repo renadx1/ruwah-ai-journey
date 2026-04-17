@@ -175,24 +175,6 @@ export default function MapPage() {
             className="px-5 -mt-6 relative z-20"
           >
             <div className="bg-card rounded-2xl shadow-lg border border-border overflow-hidden">
-              {/* Photo gallery */}
-              {selected.photos.length > 0 && (
-                <div className="flex gap-1 overflow-x-auto h-40 bg-heritage-sand" dir="ltr">
-                  {selected.photos.map((src, i) => (
-                    <img
-                      key={i}
-                      src={src}
-                      alt={`${selected.name} ${i + 1}`}
-                      className="h-full w-auto object-cover flex-shrink-0"
-                      loading="lazy"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-
               <div className="p-5">
                 <div className="flex items-start justify-between mb-3">
                   <button onClick={() => setSelected(null)} aria-label="إغلاق">
