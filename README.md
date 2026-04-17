@@ -10,6 +10,7 @@ npm run dev
 ```
 
 ## التقنيات
+- Visual Studio Code
 - React
 - TypeScript
 - Vite
