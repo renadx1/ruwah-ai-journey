@@ -15,6 +15,21 @@ const categoryLabels: Record<string, string> = {
   market: 'سوق شعبي',
 };
 
+const categoryIcon = (cat: string) => {
+  switch (cat) {
+    case 'museum':
+      return <Landmark size={20} className="text-heritage-brown" strokeWidth={1.6} />;
+    case 'heritage':
+      return <Castle size={20} className="text-heritage-brown" strokeWidth={1.6} />;
+    case 'historical':
+      return <Building2 size={20} className="text-heritage-brown" strokeWidth={1.6} />;
+    case 'market':
+      return <ShoppingBag size={20} className="text-heritage-brown" strokeWidth={1.6} />;
+    default:
+      return <Landmark size={20} className="text-heritage-brown" strokeWidth={1.6} />;
+  }
+};
+
 export default function MapPage() {
   const navigate = useNavigate();
   const userLoc = useLocation();
