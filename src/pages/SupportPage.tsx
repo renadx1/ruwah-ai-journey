@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ArrowRight, Mail, MessageCircle, Phone, HelpCircle, Headset } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { AccessibilityButton } from '@/components/AccessibilityFab';
 
 const channels = [
   { icon: Mail, title: 'البريد الإلكتروني', value: 'support@ruwat.sa', href: 'mailto:support@ruwat.sa' },
@@ -25,7 +26,7 @@ export default function SupportPage() {
     <main className="min-h-screen pb-32 najdi-pattern" data-a11y-read>
       <div className="px-5 pt-12 pb-4">
         <div className="flex items-center justify-between mb-4">
-          <div />
+          <AccessibilityButton tone="light" />
           <button onClick={() => navigate(-1)} aria-label="رجوع">
             <ArrowRight size={22} className="text-heritage-brown" />
           </button>

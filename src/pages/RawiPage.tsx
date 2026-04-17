@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { learnCategories } from '@/lib/mockData';
 import { usePoints, useLocation } from '@/lib/useStore';
 import { useAccessibility } from '@/lib/accessibility';
+import { AccessibilityButton } from '@/components/AccessibilityFab';
 
 interface Message {
   id: string;
@@ -227,6 +228,7 @@ export default function RawiPage() {
       <div className="px-5 pt-12 pb-3">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
+            <AccessibilityButton tone="light" />
             <button
               onClick={() => setHistoryOpen(true)}
               aria-label="سجل المحادثات"
