@@ -29,30 +29,69 @@ const categoryPrompts: Record<string, string> = {
   culture: 'أخبرني عن التراث الثقافي في الرياض',
 };
 
-function getAIResponse(message: string, place?: string): Promise<string> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      if (place) {
-        resolve(`${place} من أهم المعالم الثقافية في المنطقة. يعود تاريخه إلى عدة قرون ويمثل جزءًا أصيلاً من التراث السعودي.\n\nهل تريد معرفة المزيد عن تاريخه؟`);
-      } else if (message.includes('مرادف')) {
-        resolve('من المرادفات المحلية:\n\n• "يبّه" = يا أبي\n• "زقرت" = صراخ من الفرح\n• "مسيّر ومخيّر" = مُجبر وحُر');
-      } else if (message.includes('مثل') || message.includes('أمثال')) {
-        resolve('"اللي ما يعرف الصقر يشويه"\nالمعنى: من لا يعرف قيمة الشيء يضيّعه.\n\n"كل شارد وله وارد"\nالمعنى: كل غائب سيعود يومًا.');
-      } else if (message.includes('قصة') || message.includes('قصص')) {
-        resolve('من القصص التراثية: حاتم الطائي اشتهر بكرمه الشديد، ويُحكى أنه ذبح فرسه الوحيد لإكرام ضيف جاءه في ليلة باردة.');
-      } else if (message.includes('تراث') || message.includes('عادات') || message.includes('ثقاف')) {
-        resolve('العرضة النجدية رقصة شعبية تقليدية تُؤدّى في المناسبات الوطنية. يصطف الرجال في صفّين متقابلين حاملين السيوف بمصاحبة الطبول والشعر الحماسي.');
-      } else if (message.includes('متحف') || message.includes('معالم')) {
-        resolve('من أبرز معالم الرياض:\n• المتحف الوطني السعودي\n• حي الطريف بالدرعية\n• قصر المصمك\n• سوق الزل');
-      } else if (message.includes('أكل') || message.includes('طعام')) {
-        resolve('من أشهر الأكلات الشعبية في نجد:\n• الكبسة\n• الجريش\n• المطازيز\n• القهوة السعودية');
-      } else if (message.includes('لهج')) {
-        resolve('لهجة أهل الرياض من اللهجات النجدية. تتميّز بنطق الجيم جيماً قاهرية، وكثرة استخدام كلمات مثل: "وش"، "زين"، "يبّه"، "هرج" بمعنى كلام.');
-      } else {
-        resolve('سؤال رائع! التراث السعودي غني ومتنوع.\n\nيمكنني مساعدتك في:\n• المواقع التراثية\n• الأمثال والعادات\n• الفنون الشعبية');
-      }
-    }, 800 + Math.random() * 500);
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rawi-chat`;
+
+async function streamElmChat({
+  messages,
+  place,
+  onDelta,
+}: {
+  messages: { role: 'user' | 'assistant'; content: string }[];
+  place?: string;
+  onDelta: (chunk: string) => void;
+}) {
+  const resp = await fetch(CHAT_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+    },
+    body: JSON.stringify({ messages, place }),
   });
+
+  if (!resp.ok || !resp.body) {
+    if (resp.status === 429) throw new Error('تم تجاوز حد الطلبات. حاول بعد قليل.');
+    if (resp.status === 402) throw new Error('انتهى الرصيد. يرجى إضافة رصيد.');
+    let errMsg = 'تعذّر الاتصال بنموذج علم.';
+    try {
+      const j = await resp.json();
+      if (j?.error) errMsg = j.error;
+    } catch {}
+    throw new Error(errMsg);
+  }
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let textBuffer = '';
+  let streamDone = false;
+
+  while (!streamDone) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    textBuffer += decoder.decode(value, { stream: true });
+
+    let newlineIndex: number;
+    while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
+      let line = textBuffer.slice(0, newlineIndex);
+      textBuffer = textBuffer.slice(newlineIndex + 1);
+      if (line.endsWith('\r')) line = line.slice(0, -1);
+      if (line.startsWith(':') || line.trim() === '') continue;
+      if (!line.startsWith('data: ')) continue;
+      const jsonStr = line.slice(6).trim();
+      if (jsonStr === '[DONE]') {
+        streamDone = true;
+        break;
+      }
+      try {
+        const parsed = JSON.parse(jsonStr);
+        const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+        if (content) onDelta(content);
+      } catch {
+        textBuffer = line + '\n' + textBuffer;
+        break;
+      }
+    }
+  }
 }
 
 const categoryIconMap: Record<string, React.ReactNode> = {
@@ -165,14 +204,52 @@ export default function RawiPage() {
       role: 'user',
       content: (text || 'أرسلت ملف للتحليل') + fileNote,
     };
+    const historyForApi = [...messages, userMsg]
+      .filter((m) => m.id !== '0')
+      .map((m) => ({ role: m.role, content: m.content }));
+
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
     setAttachments([]);
     setIsTyping(true);
-    const response = await getAIResponse(text || 'ملف', placeName || undefined);
-    setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: response }]);
-    setIsTyping(false);
-    addPoints(2);
+
+    const assistantId = (Date.now() + 1).toString();
+    let acc = '';
+    let firstChunk = true;
+
+    try {
+      await streamElmChat({
+        messages: historyForApi,
+        place: placeName || undefined,
+        onDelta: (chunk) => {
+          acc += chunk;
+          if (firstChunk) {
+            firstChunk = false;
+            setIsTyping(false);
+            setMessages((prev) => [...prev, { id: assistantId, role: 'assistant', content: acc }]);
+          } else {
+            setMessages((prev) =>
+              prev.map((m) => (m.id === assistantId ? { ...m, content: acc } : m))
+            );
+          }
+        },
+      });
+      if (firstChunk) {
+        setIsTyping(false);
+        setMessages((prev) => [
+          ...prev,
+          { id: assistantId, role: 'assistant', content: 'لم أتلقَّ ردًا. حاول مجددًا.' },
+        ]);
+      }
+      addPoints(2);
+    } catch (err) {
+      setIsTyping(false);
+      const msg = err instanceof Error ? err.message : 'حدث خطأ غير متوقع.';
+      setMessages((prev) => [
+        ...prev,
+        { id: assistantId, role: 'assistant', content: `⚠️ ${msg}` },
+      ]);
+    }
   };
 
   const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
