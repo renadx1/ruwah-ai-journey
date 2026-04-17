@@ -1,11 +1,11 @@
-import { Home, Map, BookOpen, User, Headphones } from 'lucide-react';
+import { Home, Map, Bot, User, Headphones } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 // Side tabs (RTL): right side first, then left side. Center is Home (raised).
 const sideTabs = [
   // Right side (appears first in RTL)
   { path: '/profile', icon: User, label: 'حسابي' },
-  { path: '/rawi', icon: BookOpen, label: 'الراوي' },
+  { path: '/rawi', icon: Bot, label: 'الراوي' },
   // Left side
   { path: '/map', icon: Map, label: 'الخريطة' },
   { path: '/support', icon: Headphones, label: 'الدعم' },
