@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react';
-import { ArrowRight, MapPin, Star, MessageCircle, X, Search, Clock, Ticket, Store, Plus, Volume2 } from 'lucide-react';
+import { ArrowRight, MapPin, Star, MessageCircle, X, Search, Clock, Ticket, Store, Plus, Volume2, Navigation } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { culturalPlaces, CulturalPlace, distanceKm } from '@/lib/mockData';
 import { useLocation } from '@/lib/useStore';
 import { useAccessibility } from '@/lib/accessibility';
 import StoreUploadModal from '@/components/StoreUploadModal';
+import GoogleMapView from '@/components/GoogleMapView';
 
 const categoryLabels: Record<string, string> = {
   museum: 'متحف',
