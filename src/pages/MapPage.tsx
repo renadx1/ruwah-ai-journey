@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import { ArrowRight, MapPin, Star, MessageCircle, X, Search, Clock, Ticket, Store, Plus, Volume2 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF } from '@react-google-maps/api';
 import { culturalPlaces, CulturalPlace, distanceKm } from '@/lib/mockData';
 import { useLocation } from '@/lib/useStore';
 import { useAccessibility } from '@/lib/accessibility';
@@ -14,23 +13,6 @@ const categoryLabels: Record<string, string> = {
   historical: 'تاريخي',
   market: 'سوق شعبي',
 };
-
-// Google Maps API key — set by developer (not visible in UI).
-// TODO: After enabling Lovable Cloud, move this to a secret + edge function.
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
-
-const najdiMapStyle: google.maps.MapTypeStyle[] = [
-  { elementType: 'geometry', stylers: [{ color: '#f1e6d0' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#5a3a1a' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#fbf3e1' }] },
-  { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#c9a877' }] },
-  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#e8d4a8' }] },
-  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#c9a877' }] },
-  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#dcb87a' }] },
-  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#a8c4c9' }] },
-];
 
 export default function MapPage() {
   const navigate = useNavigate();
@@ -44,11 +26,6 @@ export default function MapPage() {
   const [search, setSearch] = useState('');
   const [showUpload, setShowUpload] = useState(false);
 
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-    id: 'ruwat-gmaps',
-  });
-
   const filtered = useMemo(
     () =>
       culturalPlaces.filter(
@@ -61,83 +38,52 @@ export default function MapPage() {
     [search]
   );
 
-  const center = useMemo(
-    () => (selected ? { lat: selected.lat, lng: selected.lng } : { lat: userLoc.lat, lng: userLoc.lng }),
-    [selected, userLoc]
-  );
-
   const distance = selected
     ? distanceKm(userLoc.lat, userLoc.lng, selected.lat, selected.lng)
     : 0;
 
-  const showMap = GOOGLE_MAPS_API_KEY && isLoaded && !loadError;
-
   return (
     <div className="min-h-screen pb-32 bg-background">
-      {/* Map area */}
-      <div className="relative h-[52vh] bg-heritage-sand overflow-hidden">
-        {showMap ? (
-          <GoogleMap
-            mapContainerStyle={{ width: '100%', height: '100%' }}
-            center={center}
-            zoom={12}
-            options={{
-              styles: najdiMapStyle,
-              disableDefaultUI: true,
-              zoomControl: true,
-              clickableIcons: false,
-            }}
-          >
-            {filtered.map((place) => (
-              <MarkerF
-                key={place.id}
-                position={{ lat: place.lat, lng: place.lng }}
-                onClick={() => setSelected(place)}
-                icon={{
-                  path: google.maps.SymbolPath.CIRCLE,
-                  scale: selected?.id === place.id ? 14 : 10,
-                  fillColor: selected?.id === place.id ? '#5a3a1a' : '#8b5a2b',
-                  fillOpacity: 1,
-                  strokeColor: '#fbf3e1',
-                  strokeWeight: 3,
-                }}
-              />
-            ))}
-            {selected && (
-              <InfoWindowF
-                position={{ lat: selected.lat, lng: selected.lng }}
-                onCloseClick={() => setSelected(null)}
+      {/* Stylized Najdi-pattern map area (old design) */}
+      <div className="relative h-[42vh] bg-heritage-sand overflow-hidden najdi-pattern-strong">
+        {/* Decorative pins scattered on the pattern */}
+        <div className="absolute inset-0">
+          {filtered.slice(0, 6).map((p, i) => {
+            const positions = [
+              { top: '25%', left: '20%' },
+              { top: '40%', left: '60%' },
+              { top: '55%', left: '35%' },
+              { top: '30%', left: '75%' },
+              { top: '65%', left: '70%' },
+              { top: '70%', left: '15%' },
+            ];
+            const isSel = selected?.id === p.id;
+            return (
+              <button
+                key={p.id}
+                onClick={() => setSelected(p)}
+                style={positions[i]}
+                className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group"
               >
-                <div style={{ direction: 'rtl', minWidth: 140 }}>
-                  <strong style={{ color: '#5a3a1a' }}>{selected.name}</strong>
-                  <div style={{ fontSize: 11, color: '#8b5a2b' }}>{selected.district}</div>
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center shadow-md ring-2 ring-card transition-transform ${
+                  isSel ? 'bg-heritage-brown scale-110' : 'bg-primary'
+                }`}>
+                  <MapPin size={16} className="text-primary-foreground" strokeWidth={2} />
                 </div>
-              </InfoWindowF>
-            )}
-          </GoogleMap>
-        ) : (
-          // Fallback Najdi-pattern map view
-          <div className="absolute inset-0 najdi-pattern-strong">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center text-heritage-brown/70 text-xs font-heading">
-                {loadError ? 'تعذّر تحميل الخريطة' : 'جاري تجهيز الخريطة...'}
-              </div>
-            </div>
-            {/* Show place pins as cards on the pattern */}
-            <div className="absolute inset-x-0 bottom-4 px-4 flex gap-2 overflow-x-auto" dir="rtl">
-              {filtered.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => setSelected(p)}
-                  className="min-w-[120px] bg-card/95 backdrop-blur rounded-xl p-2 shadow border border-border text-right flex-shrink-0"
-                >
-                  <span className="text-lg grayscale-[40%]">{p.image}</span>
-                  <p className="text-[10px] font-heading text-heritage-brown truncate">{p.name}</p>
-                </button>
-              ))}
-            </div>
+                <span className="mt-1 text-[10px] font-heading text-heritage-brown bg-card/90 backdrop-blur px-1.5 py-0.5 rounded-full whitespace-nowrap shadow-sm">
+                  {p.name.split(' ').slice(0, 2).join(' ')}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* City label center */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+          <div className="bg-card/80 backdrop-blur rounded-full px-3 py-1 border border-border">
+            <span className="text-heritage-brown text-xs font-heading font-bold">{userLoc.city}</span>
           </div>
-        )}
+        </div>
 
         {/* Top overlay: back + search bar */}
         <div className="absolute top-0 left-0 right-0 z-20 px-4 pt-12 pb-3 flex items-center gap-2">
@@ -175,24 +121,6 @@ export default function MapPage() {
             className="px-5 -mt-6 relative z-20"
           >
             <div className="bg-card rounded-2xl shadow-lg border border-border overflow-hidden">
-              {/* Photo gallery */}
-              {selected.photos.length > 0 && (
-                <div className="flex gap-1 overflow-x-auto h-40 bg-heritage-sand" dir="ltr">
-                  {selected.photos.map((src, i) => (
-                    <img
-                      key={i}
-                      src={src}
-                      alt={`${selected.name} ${i + 1}`}
-                      className="h-full w-auto object-cover flex-shrink-0"
-                      loading="lazy"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-
               <div className="p-5">
                 <div className="flex items-start justify-between mb-3">
                   <button onClick={() => setSelected(null)} aria-label="إغلاق">

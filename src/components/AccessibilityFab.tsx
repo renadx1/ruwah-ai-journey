@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Accessibility, X, Type, Contrast, Mic, Volume2, ChevronDown } from 'lucide-react';
+import { Accessibility, X, Type, Contrast, Mic, Volume2, Plus, Minus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAccessibility } from '@/lib/accessibility';
 
@@ -9,7 +9,9 @@ export default function AccessibilityFab() {
     largeText,
     highContrast,
     voiceControl,
-    toggleLargeText,
+    textScale,
+    increaseText,
+    decreaseText,
     toggleHighContrast,
     toggleVoiceControl,
     speak,
@@ -31,26 +33,21 @@ export default function AccessibilityFab() {
 
   return (
     <>
-      {/* Top accessibility bar — fixed on every page */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 z-[55] w-full max-w-lg pointer-events-none">
-        <button
-          onClick={() => setOpen(true)}
-          className={`pointer-events-auto w-full flex items-center justify-between gap-2 px-4 py-2 backdrop-blur-md border-b shadow-md transition-colors ${
-            anyActive
-              ? 'bg-heritage-brown text-primary-foreground border-heritage-brown'
-              : 'bg-card/90 text-heritage-brown border-border'
-          }`}
-          aria-label="إعدادات إمكانية الوصول"
-        >
-          <ChevronDown size={14} className={anyActive ? 'opacity-80' : 'text-heritage-brown/70'} />
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-heading font-semibold">
-              إمكانية الوصول {anyActive && '• مُفعّلة'}
-            </span>
-            <Accessibility size={18} strokeWidth={1.8} className={anyActive ? '' : 'text-heritage-brown'} />
-          </div>
-        </button>
-      </div>
+      {/* Floating top-right accessibility button — visible on every page */}
+      <button
+        onClick={() => setOpen(true)}
+        aria-label="إعدادات إمكانية الوصول"
+        className={`fixed top-3 right-3 z-[55] w-12 h-12 rounded-full shadow-lg backdrop-blur-md border flex items-center justify-center transition-colors ${
+          anyActive
+            ? 'bg-heritage-brown text-primary-foreground border-heritage-brown'
+            : 'bg-card/95 text-heritage-brown border-border'
+        }`}
+      >
+        <Accessibility size={22} strokeWidth={1.8} />
+        {anyActive && (
+          <span className="absolute -top-1 -left-1 w-3 h-3 rounded-full bg-primary border-2 border-card" />
+        )}
+      </button>
 
       <AnimatePresence>
         {open && (
@@ -91,13 +88,36 @@ export default function AccessibilityFab() {
                   active={voiceControl}
                   onAction={toggleVoiceControl}
                 />
-                <Row
-                  icon={<Type size={18} className="text-heritage-brown" />}
-                  title="تكبير الخط"
-                  desc="حجم نص أكبر للقراءة المريحة"
-                  active={largeText}
-                  onAction={toggleLargeText}
-                />
+
+                {/* Text size with +/- controls */}
+                <div className="bg-secondary rounded-2xl p-3 flex items-center gap-3 text-right" dir="rtl">
+                  <div className="w-10 h-10 rounded-full bg-card flex items-center justify-center flex-shrink-0">
+                    <Type size={18} className="text-heritage-brown" />
+                  </div>
+                  <div className="flex-1 text-right">
+                    <h3 className="font-heading font-semibold text-sm text-heritage-brown">حجم الخط</h3>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      الحجم الحالي: {Math.round(textScale * 100)}%
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={decreaseText}
+                      aria-label="تصغير الخط"
+                      className="w-8 h-8 rounded-full bg-card border border-border text-heritage-brown flex items-center justify-center active:scale-90 transition"
+                    >
+                      <Minus size={14} />
+                    </button>
+                    <button
+                      onClick={increaseText}
+                      aria-label="تكبير الخط"
+                      className="w-8 h-8 rounded-full bg-heritage-brown text-primary-foreground flex items-center justify-center active:scale-90 transition"
+                    >
+                      <Plus size={14} />
+                    </button>
+                  </div>
+                </div>
+
                 <Row
                   icon={<Contrast size={18} className="text-heritage-brown" />}
                   title="تباين عالي"
