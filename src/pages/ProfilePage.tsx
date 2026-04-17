@@ -3,6 +3,7 @@ import { ArrowRight, Star, Trophy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useUserName, usePoints } from '@/lib/useStore';
+import { AccessibilityButton } from '@/components/AccessibilityFab';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -20,8 +21,8 @@ export default function ProfilePage() {
     <div className="min-h-screen pb-32 najdi-pattern">
       <div className="gradient-heritage px-5 pt-12 pb-10 rounded-b-3xl">
         <div className="flex items-center justify-between mb-6">
-          <div />
-          <button onClick={() => navigate(-1)}>
+          <AccessibilityButton tone="dark" />
+          <button onClick={() => navigate(-1)} aria-label="رجوع">
             <ArrowRight size={22} className="text-primary-foreground" />
           </button>
         </div>

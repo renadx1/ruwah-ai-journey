@@ -3,6 +3,7 @@ import { MapPin, Star, ChevronLeft, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useUserName, useLocation, usePoints } from '@/lib/useStore';
 import { culturalPlaces, distanceKm } from '@/lib/mockData';
+import { AccessibilityButton } from '@/components/AccessibilityFab';
 
 export default function Index() {
   const navigate = useNavigate();
@@ -22,14 +23,17 @@ export default function Index() {
       {/* Header */}
       <div className="gradient-heritage px-5 pt-12 pb-8 rounded-b-3xl">
         <div className="flex items-center justify-between mb-6">
-          <button
-            onClick={() => navigate('/profile')}
-            className="w-10 h-10 rounded-full bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center"
-          >
-            <span className="text-primary-foreground font-heading font-bold text-sm">
-              {displayName.charAt(0)}
-            </span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/profile')}
+              className="w-10 h-10 rounded-full bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center"
+            >
+              <span className="text-primary-foreground font-heading font-bold text-sm">
+                {displayName.charAt(0)}
+              </span>
+            </button>
+            <AccessibilityButton tone="dark" />
+          </div>
           <div className="flex items-center gap-1.5 bg-primary-foreground/20 backdrop-blur-sm rounded-full px-3 py-1.5">
             <span className="text-primary-foreground text-xs">{location.city}</span>
             <MapPin size={14} className="text-primary-foreground" />

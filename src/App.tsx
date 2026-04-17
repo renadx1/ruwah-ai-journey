@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import BottomNav from "@/components/BottomNav";
-import AccessibilityFab from "@/components/AccessibilityFab";
+import AccessibilityFab, { AccessibilityProviderRoot } from "@/components/AccessibilityFab";
 import { AccessibilityProvider } from "@/lib/accessibility";
 import Index from "./pages/Index";
 import MapPage from "./pages/MapPage";
@@ -21,6 +21,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <AccessibilityProvider>
+        <AccessibilityProviderRoot>
         <BrowserRouter>
           <div className="max-w-lg mx-auto relative bg-background min-h-screen shadow-2xl">
             <Routes>
@@ -39,6 +40,7 @@ const App = () => (
             <BottomNav />
           </div>
         </BrowserRouter>
+        </AccessibilityProviderRoot>
       </AccessibilityProvider>
     </TooltipProvider>
   </QueryClientProvider>
