@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowRight, Star, Trophy, BookOpen } from 'lucide-react';
+import { ArrowRight, Star, Trophy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useUserName, usePoints } from '@/lib/useStore';
@@ -43,26 +43,21 @@ export default function ProfilePage() {
       </div>
 
       <div className="px-5 -mt-5">
-        {/* Stats */}
+        {/* Stats — without "دروس" */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-card rounded-2xl p-4 shadow-md border border-border grid grid-cols-3 gap-3 text-center mb-6"
+          className="bg-card rounded-2xl p-4 shadow-md border border-border grid grid-cols-2 gap-3 text-center mb-6"
         >
           <div>
-            <Star size={20} className="text-heritage-gold mx-auto mb-1" />
+            <Star size={20} className="text-heritage-brown mx-auto mb-1" />
             <p className="font-heading font-bold text-foreground">{points}</p>
             <span className="text-[10px] text-muted-foreground">نقطة</span>
           </div>
           <div>
-            <Trophy size={20} className="text-heritage-terracotta mx-auto mb-1" />
+            <Trophy size={20} className="text-heritage-brown mx-auto mb-1" />
             <p className="font-heading font-bold text-foreground">مبتدئ</p>
             <span className="text-[10px] text-muted-foreground">المستوى</span>
-          </div>
-          <div>
-            <BookOpen size={20} className="text-primary mx-auto mb-1" />
-            <p className="font-heading font-bold text-foreground">3</p>
-            <span className="text-[10px] text-muted-foreground">دروس</span>
           </div>
         </motion.div>
 

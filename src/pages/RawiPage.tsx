@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ArrowRight, Sparkles, Send, Bot, User as UserIcon, BookOpen, MessageCircle } from 'lucide-react';
+import { ArrowRight, Sparkles, Send, Bot, User as UserIcon, Mic, Volume2, Square } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { learnCategories } from '@/lib/mockData';
@@ -14,7 +14,6 @@ const mockResponses: Record<string, string[]> = {
     '💬 **"اللي ما يعرف الصقر يشويه"**\n\nالمعنى: من لا يعرف قيمة الشيء يضيّعه.',
     '💬 **"كل شارد وله وارد"**\n\nالمعنى: كل غائب سيعود يومًا.',
   ],
-  poetry: ['📜 **من شعر محسن الهزّاني:**\n\n*يا ناقتي لا تجزعين من السرى*'],
   stories: ['📖 **قصة "حاتم الطائي"**\n\nكان حاتم مشهورًا بكرمه الشديد.'],
   culture: ['🎭 **"العرضة النجدية"**\n\nرقصة شعبية تقليدية تُؤدّى في المناسبات الوطنية.'],
 };
@@ -25,19 +24,28 @@ interface Message {
   content: string;
 }
 
+const chatSuggestions = [
+  '🏛️ أخبرني عن أهم المعالم في الرياض',
+  '🍚 وش الأكلات الشعبية النجدية؟',
+  '💬 علّمني أمثال شعبية',
+  '🎭 احكِ لي عن العرضة النجدية',
+];
+
 function getAIResponse(message: string, place?: string): Promise<string> {
   return new Promise((resolve) => {
     setTimeout(() => {
       if (place) {
         resolve(`${place} هو من أهم المعالم الثقافية في المنطقة. يعود تاريخه إلى عدة قرون ويمثل جزءًا أصيلاً من التراث السعودي.\n\nهل تريد معرفة المزيد عن تاريخه؟`);
-      } else if (message.includes('متحف')) {
-        resolve('المتحف الوطني السعودي في الرياض هو أكبر متاحف المملكة، يحتوي على 8 قاعات عرض. 🏛️');
+      } else if (message.includes('متحف') || message.includes('معالم')) {
+        resolve('من أبرز معالم الرياض:\n🏛️ المتحف الوطني السعودي\n🏰 حي الطريف بالدرعية\n🏯 قصر المصمك\n🏪 سوق الزل');
       } else if (message.includes('أكل') || message.includes('طعام')) {
         resolve('من أشهر الأكلات الشعبية في نجد:\n🍚 الكبسة\n🫓 الجريش\n🍖 المطازيز\n☕ القهوة السعودية');
+      } else if (message.includes('مثل') || message.includes('أمثال')) {
+        resolve('💬 "اللي ما يعرف الصقر يشويه" — من لا يعرف قيمة الشيء يضيّعه.\n\n💬 "كل شارد وله وارد" — كل غائب سيعود يومًا.');
       } else {
-        resolve('سؤال رائع! التراث السعودي غني ومتنوع.\n\nيمكنني مساعدتك في:\n- 🏰 المواقع التراثية\n- 📚 الأمثال والشعر\n- 🎭 العادات والتقاليد');
+        resolve('سؤال رائع! التراث السعودي غني ومتنوع.\n\nيمكنني مساعدتك في:\n- 🏰 المواقع التراثية\n- 📚 الأمثال والعادات\n- 🎭 الفنون الشعبية');
       }
-    }, 900 + Math.random() * 800);
+    }, 900 + Math.random() * 600);
   });
 }
 
@@ -66,7 +74,7 @@ export default function RawiPage() {
       setContent(responses[Math.floor(Math.random() * responses.length)]);
       setLoading(false);
       addPoints(5);
-    }, 1100);
+    }, 1000);
   };
 
   // ---- Chat state ----
@@ -75,27 +83,78 @@ export default function RawiPage() {
       id: '0',
       role: 'assistant',
       content: placeName
-        ? `أهلاً وسهلاً! 👋 أنا الراوي، مساعدك الذكي لاستكشاف ثقافة المنطقة.\n\nأراك مهتمًا بـ **${placeName}** — اسألني أي شيء عنه!`
-        : 'أهلاً وسهلاً! 👋 أنا الراوي، مساعدك الذكي لاستكشاف ثقافة المنطقة.\n\nاسألني عن المعالم، العادات، الأمثال، أو أي جانب من تراثنا.',
+        ? `أهلًا وسهلًا! 👋 أنا الراوي، مساعدك الذكي لاستكشاف ثقافة المنطقة.\n\nأراك مهتمًا بـ **${placeName}** — اسألني أي شيء عنه!`
+        : 'أهلًا وسهلًا! 👋 أنا الراوي، مساعدك الذكي لاستكشاف ثقافة المنطقة.',
     },
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, tab]);
 
-  const handleSend = async () => {
-    if (!input.trim() || isTyping) return;
-    const userMsg: Message = { id: Date.now().toString(), role: 'user', content: input.trim() };
+  const handleSend = async (forced?: string) => {
+    const text = (forced ?? input).trim();
+    if (!text || isTyping) return;
+    const userMsg: Message = { id: Date.now().toString(), role: 'user', content: text };
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
     setIsTyping(true);
-    const response = await getAIResponse(input, placeName || undefined);
+    const response = await getAIResponse(text, placeName || undefined);
     setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: response }]);
     setIsTyping(false);
+  };
+
+  // Voice input via Web Speech API (graceful fallback)
+  const toggleRecording = () => {
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) {
+      alert('متصفحك لا يدعم التسجيل الصوتي. جرّب Chrome.');
+      return;
+    }
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      setIsRecording(false);
+      return;
+    }
+    const rec = new SR();
+    rec.lang = 'ar-SA';
+    rec.interimResults = false;
+    rec.continuous = false;
+    rec.onresult = (e: any) => {
+      const transcript = e.results[0][0].transcript;
+      setInput((prev) => (prev ? prev + ' ' + transcript : transcript));
+    };
+    rec.onend = () => setIsRecording(false);
+    rec.onerror = () => setIsRecording(false);
+    rec.start();
+    recognitionRef.current = rec;
+    setIsRecording(true);
+  };
+
+  // Text-to-speech for assistant messages
+  const speak = (msg: Message) => {
+    if (!('speechSynthesis' in window)) {
+      alert('متصفحك لا يدعم تشغيل الصوت.');
+      return;
+    }
+    if (speakingId === msg.id) {
+      window.speechSynthesis.cancel();
+      setSpeakingId(null);
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(msg.content.replace(/\*\*/g, '').replace(/[🏛️🏰🏯🏪✈️📖💬🔤🎭🍚🫓🖖☕👋💡📝📜]/gu, ''));
+    utter.lang = 'ar-SA';
+    utter.onend = () => setSpeakingId(null);
+    utter.onerror = () => setSpeakingId(null);
+    window.speechSynthesis.speak(utter);
+    setSpeakingId(msg.id);
   };
 
   return (
@@ -119,8 +178,8 @@ export default function RawiPage() {
         {/* Tab switcher */}
         <div className="mt-4 bg-card/80 backdrop-blur border border-border rounded-2xl p-1 flex">
           {[
-            { key: 'learn' as Tab, label: 'تعلّم', icon: BookOpen },
-            { key: 'chat' as Tab, label: 'المحادثة', icon: MessageCircle },
+            { key: 'learn' as Tab, label: 'تعلّم' },
+            { key: 'chat' as Tab, label: 'المحادثة' },
           ].map((t) => {
             const active = tab === t.key;
             return (
@@ -133,8 +192,7 @@ export default function RawiPage() {
                     : 'text-heritage-brown/70'
                 }`}
               >
-                <t.icon size={15} strokeWidth={1.7} />
-                <span>{t.label}</span>
+                {t.label}
               </button>
             );
           })}
@@ -206,13 +264,6 @@ export default function RawiPage() {
                       >
                         محتوى آخر ✨
                       </button>
-                      <button
-                        onClick={() => setTab('chat')}
-                        className="w-full mt-2 border border-heritage-brown/30 text-heritage-brown rounded-xl py-3 font-heading text-sm active:scale-[0.97] transition-transform flex items-center justify-center gap-2"
-                      >
-                        <MessageCircle size={14} />
-                        ناقش الراوي
-                      </button>
                     </div>
                   )}
                 </div>
@@ -228,7 +279,7 @@ export default function RawiPage() {
             className="flex-1 flex flex-col"
           >
             {/* Messages */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3 max-h-[calc(100vh-320px)]">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3 max-h-[calc(100vh-380px)]">
               {messages.map((msg) => (
                 <motion.div
                   key={msg.id}
@@ -241,15 +292,25 @@ export default function RawiPage() {
                       ? 'bg-primary text-primary-foreground rounded-bl-sm'
                       : 'bg-card border border-border text-foreground rounded-br-sm'
                   }`}>
-                    <div className="flex items-center gap-1.5 mb-1">
-                      {msg.role === 'assistant' ? (
-                        <Bot size={12} className="text-heritage-brown" />
-                      ) : (
-                        <UserIcon size={12} />
+                    <div className="flex items-center gap-1.5 mb-1 justify-between">
+                      <div className="flex items-center gap-1.5">
+                        {msg.role === 'assistant' ? (
+                          <Bot size={12} className="text-heritage-brown" />
+                        ) : (
+                          <UserIcon size={12} />
+                        )}
+                        <span className="text-[10px] opacity-70 font-heading">
+                          {msg.role === 'user' ? 'أنت' : 'الراوي'}
+                        </span>
+                      </div>
+                      {msg.role === 'assistant' && (
+                        <button onClick={() => speak(msg)} aria-label="استمع">
+                          <Volume2
+                            size={14}
+                            className={`${speakingId === msg.id ? 'text-primary' : 'text-heritage-brown/60'}`}
+                          />
+                        </button>
                       )}
-                      <span className="text-[10px] opacity-70 font-heading">
-                        {msg.role === 'user' ? 'أنت' : 'الراوي'}
-                      </span>
                     </div>
                     <div className="text-sm leading-relaxed whitespace-pre-line">
                       {msg.content.replace(/\*\*/g, '')}
@@ -273,15 +334,34 @@ export default function RawiPage() {
                   </div>
                 </motion.div>
               )}
+
+              {/* Suggested prompts (ChatGPT-style) — show when only welcome message */}
+              {messages.length === 1 && !isTyping && (
+                <div className="grid grid-cols-2 gap-2 pt-3" dir="rtl">
+                  {chatSuggestions.map((s, i) => (
+                    <motion.button
+                      key={s}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 + i * 0.05 }}
+                      onClick={() => handleSend(s)}
+                      className="bg-card border border-border rounded-2xl p-3 text-right text-xs font-heading text-heritage-brown active:scale-[0.97] transition-transform shadow-sm leading-snug"
+                    >
+                      {s}
+                    </motion.button>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Input */}
+            {/* Input bar with mic */}
             <div className="px-4 pt-2 pb-3 bg-card/95 backdrop-blur border-t border-border sticky bottom-24">
               <div className="flex items-center gap-2">
                 <button
-                  onClick={handleSend}
+                  onClick={() => handleSend()}
                   disabled={!input.trim() || isTyping}
                   className="w-10 h-10 bg-gradient-to-br from-primary to-heritage-brown text-primary-foreground rounded-full flex items-center justify-center disabled:opacity-40 active:scale-95 transition-transform flex-shrink-0"
+                  aria-label="إرسال"
                 >
                   <Send size={16} />
                 </button>
@@ -292,6 +372,17 @@ export default function RawiPage() {
                   placeholder="اسأل الراوي عن التراث..."
                   className="flex-1 bg-secondary rounded-full px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 transition text-right font-body"
                 />
+                <button
+                  onClick={toggleRecording}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0 border ${
+                    isRecording
+                      ? 'bg-destructive text-destructive-foreground border-destructive animate-pulse'
+                      : 'bg-card text-heritage-brown border-border'
+                  }`}
+                  aria-label="تسجيل صوتي"
+                >
+                  {isRecording ? <Square size={14} /> : <Mic size={16} strokeWidth={1.7} />}
+                </button>
               </div>
             </div>
           </motion.div>
