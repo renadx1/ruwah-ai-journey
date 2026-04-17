@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useUserName, useLocation, usePoints } from '@/lib/useStore';
 import { culturalPlaces, distanceKm } from '@/lib/mockData';
 import { AccessibilityButton } from '@/components/AccessibilityFab';
+import HomeMapPreview from '@/components/HomeMapPreview';
 
 export default function Index() {
   const navigate = useNavigate();
