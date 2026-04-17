@@ -202,7 +202,9 @@ export default function MapPage() {
                     <h3 className="font-heading text-sm font-semibold text-heritage-brown">{place.name}</h3>
                     <span className="text-[11px] text-muted-foreground">{place.district}</span>
                   </div>
-                  <span className="text-xl grayscale-[40%]">{place.image}</span>
+                  <span className="flex-shrink-0 w-9 h-9 rounded-full bg-secondary flex items-center justify-center">
+                    {categoryIcon(place.category)}
+                  </span>
                 </button>
               ))}
               {filtered.length === 0 && (
