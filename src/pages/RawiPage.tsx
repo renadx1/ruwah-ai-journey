@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ArrowRight, Send, Bot, User as UserIcon, Mic, Volume2, Square } from 'lucide-react';
+import { ArrowRight, Send, Bot, User as UserIcon, Mic, Volume2, Square, Paperclip, X } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { learnCategories } from '@/lib/mockData';
