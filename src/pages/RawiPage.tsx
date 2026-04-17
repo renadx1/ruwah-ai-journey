@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { ArrowRight, Send, Bot, User as UserIcon, Mic, Volume2, Square, Paperclip, X } from 'lucide-react';
+import { ArrowRight, Send, Bot, User as UserIcon, Mic, Volume2, Square, Paperclip, X, History, Plus, Trash2 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { learnCategories } from '@/lib/mockData';
 import { usePoints, useLocation } from '@/lib/useStore';
 import { useAccessibility } from '@/lib/accessibility';
@@ -11,6 +11,15 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
 }
+
+interface Conversation {
+  id: string;
+  title: string;
+  messages: Message[];
+  updatedAt: number;
+}
+
+const STORAGE_KEY = 'ruwat_conversations';
 
 const categoryPrompts: Record<string, string> = {
   synonyms: 'علّمني بعض المرادفات المحلية في نجد',
@@ -45,6 +54,27 @@ function getAIResponse(message: string, place?: string): Promise<string> {
   });
 }
 
+const makeWelcome = (placeName: string | null): Message => ({
+  id: '0',
+  role: 'assistant',
+  content: placeName
+    ? `أهلًا وسهلًا 👋 أنا الراوي، مساعدك الذكي لاستكشاف ثقافة المنطقة.\nأراك مهتمًا بـ ${placeName} — اسألني أي شيء عنه!`
+    : 'أهلًا وسهلًا 👋 أنا الراوي، مساعدك الذكي لاستكشاف ثقافة المنطقة. اختر موضوعًا أو اسألني مباشرة.',
+});
+
+function loadConversations(): Conversation[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveConversations(list: Conversation[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+}
+
 export default function RawiPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -54,20 +84,15 @@ export default function RawiPage() {
   const location = useLocation();
   const { speak, stopSpeaking, isSpeaking } = useAccessibility();
 
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '0',
-      role: 'assistant',
-      content: placeName
-        ? `أهلًا وسهلًا 👋 أنا الراوي، مساعدك الذكي لاستكشاف ثقافة المنطقة.\nأراك مهتمًا بـ ${placeName} — اسألني أي شيء عنه!`
-        : 'أهلًا وسهلًا 👋 أنا الراوي، مساعدك الذكي لاستكشاف ثقافة المنطقة. اختر موضوعًا أو اسألني مباشرة.',
-    },
-  ]);
+  const [conversations, setConversations] = useState<Conversation[]>(() => loadConversations());
+  const [currentId, setCurrentId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([makeWelcome(placeName)]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -76,6 +101,51 @@ export default function RawiPage() {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
+
+  // Persist current conversation whenever messages change (after first user msg)
+  useEffect(() => {
+    const hasUserMessage = messages.some((m) => m.role === 'user');
+    if (!hasUserMessage) return;
+
+    const id = currentId || Date.now().toString();
+    const firstUser = messages.find((m) => m.role === 'user');
+    const title = (firstUser?.content || 'محادثة').replace(/📎.*$/s, '').slice(0, 40).trim() || 'محادثة';
+    const conv: Conversation = { id, title, messages, updatedAt: Date.now() };
+
+    setConversations((prev) => {
+      const others = prev.filter((c) => c.id !== id);
+      const next = [conv, ...others].slice(0, 30);
+      saveConversations(next);
+      return next;
+    });
+    if (!currentId) setCurrentId(id);
+  }, [messages, currentId]);
+
+  const newChat = () => {
+    setCurrentId(null);
+    setMessages([makeWelcome(placeName)]);
+    setInput('');
+    setAttachments([]);
+    setHistoryOpen(false);
+  };
+
+  const loadConversation = (c: Conversation) => {
+    setCurrentId(c.id);
+    setMessages(c.messages);
+    setHistoryOpen(false);
+  };
+
+  const deleteConversation = (id: string) => {
+    setConversations((prev) => {
+      const next = prev.filter((c) => c.id !== id);
+      saveConversations(next);
+      return next;
+    });
+    if (currentId === id) {
+      setCurrentId(null);
+      setMessages([makeWelcome(placeName)]);
+    }
+  };
 
   const handleSend = async (forced?: string) => {
     const text = (forced ?? input).trim();
@@ -156,21 +226,36 @@ export default function RawiPage() {
       {/* Header */}
       <div className="px-5 pt-12 pb-3">
         <div className="flex items-center justify-between mb-4">
-          <div />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setHistoryOpen(true)}
+              aria-label="سجل المحادثات"
+              className="w-9 h-9 rounded-full bg-secondary border border-border flex items-center justify-center text-heritage-brown active:scale-95 transition"
+            >
+              <History size={18} strokeWidth={1.8} />
+            </button>
+            <button
+              onClick={newChat}
+              aria-label="محادثة جديدة"
+              className="w-9 h-9 rounded-full bg-secondary border border-border flex items-center justify-center text-heritage-brown active:scale-95 transition"
+            >
+              <Plus size={18} strokeWidth={1.8} />
+            </button>
+          </div>
           <button onClick={() => navigate(-1)} aria-label="رجوع">
             <ArrowRight size={22} className="text-heritage-brown" />
           </button>
         </div>
 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="font-heading text-2xl font-bold text-heritage-brown">الراوي</h1>
-          <p className="text-muted-foreground text-sm mt-1">
+          <h1 className="font-heading text-2xl font-bold text-heritage-brown text-right">الراوي</h1>
+          <p className="text-muted-foreground text-sm mt-1 text-right">
             مساعدك الذكي لاستكشاف تراث {location.city}
           </p>
         </motion.div>
       </div>
 
-      {/* Messages — welcome message first, category cards appear underneath */}
+      {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
         {messages.map((msg) => (
           <motion.div
@@ -231,7 +316,7 @@ export default function RawiPage() {
           </motion.div>
         )}
 
-        {/* Category prompts — appear under the welcome message */}
+        {/* Category prompts under welcome message */}
         {messages.length === 1 && !isTyping && (
           <div className="grid grid-cols-2 gap-2 pt-2" dir="rtl">
             {learnCategories.map((cat, i) => (
@@ -256,7 +341,7 @@ export default function RawiPage() {
         )}
       </div>
 
-      {/* Input bar with mic + attachments */}
+      {/* Input bar with attachments + mic */}
       <div className="px-4 pt-2 pb-3 bg-card/95 backdrop-blur border-t border-border sticky bottom-24">
         {attachments.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-2" dir="rtl">
@@ -322,6 +407,84 @@ export default function RawiPage() {
           </button>
         </div>
       </div>
+
+      {/* Conversation history drawer */}
+      <AnimatePresence>
+        {historyOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setHistoryOpen(false)}
+            className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm flex justify-end"
+          >
+            <motion.div
+              initial={{ x: -320 }}
+              animate={{ x: 0 }}
+              exit={{ x: -320 }}
+              onClick={(e) => e.stopPropagation()}
+              dir="rtl"
+              className="absolute right-0 top-0 bottom-0 w-[85%] max-w-sm bg-card border-l border-border flex flex-col shadow-2xl"
+            >
+              <div className="flex items-center justify-between px-4 py-4 border-b border-border">
+                <button onClick={() => setHistoryOpen(false)} aria-label="إغلاق">
+                  <X size={20} className="text-muted-foreground" />
+                </button>
+                <h2 className="font-heading font-bold text-heritage-brown">المحادثات السابقة</h2>
+              </div>
+
+              <button
+                onClick={newChat}
+                className="m-3 flex items-center justify-center gap-2 bg-gradient-to-br from-primary to-heritage-brown text-primary-foreground rounded-xl py-2.5 text-sm font-heading active:scale-[0.98] transition"
+              >
+                <Plus size={16} />
+                محادثة جديدة
+              </button>
+
+              <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-2">
+                {conversations.length === 0 && (
+                  <p className="text-center text-muted-foreground text-sm py-8">
+                    لا توجد محادثات سابقة بعد
+                  </p>
+                )}
+                {conversations.map((c) => {
+                  const isActive = c.id === currentId;
+                  return (
+                    <div
+                      key={c.id}
+                      className={`group flex items-center gap-2 rounded-xl border p-3 transition ${
+                        isActive
+                          ? 'bg-secondary border-heritage-brown/40'
+                          : 'bg-card border-border hover:bg-secondary/60'
+                      }`}
+                    >
+                      <button
+                        onClick={() => deleteConversation(c.id)}
+                        aria-label="حذف"
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition flex-shrink-0"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                      <button
+                        onClick={() => loadConversation(c)}
+                        className="flex-1 text-right min-w-0"
+                      >
+                        <h3 className="font-heading text-sm font-semibold text-heritage-brown truncate">
+                          {c.title}
+                        </h3>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          {new Date(c.updatedAt).toLocaleDateString('ar-SA')} •{' '}
+                          {c.messages.filter((m) => m.role === 'user').length} رسالة
+                        </p>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }
