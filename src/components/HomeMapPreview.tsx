@@ -1,95 +1,55 @@
-import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
+import { MapContainer, TileLayer, Marker, CircleMarker } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { culturalPlaces } from '@/lib/mockData';
-
-const GOOGLE_MAPS_API_KEY = 'AIzaSyB__li1XnzJU765wUSkUiWai-p5G2h1UEk';
-
-const containerStyle = { width: '100%', height: '100%' };
-
-// Light, airy heritage map style — much lighter than the full map page
-const lightStyles: google.maps.MapTypeStyle[] = [
-  { elementType: 'geometry', stylers: [{ color: '#fdf6e6' }] },
-  { elementType: 'labels', stylers: [{ visibility: 'off' }] },
-  { featureType: 'administrative', stylers: [{ visibility: 'off' }] },
-  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
-  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#f0e4cc' }] },
-  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#f5dca8' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#cfe4ec' }] },
-  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-  { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#fdf6e6' }] },
-];
 
 interface Props {
   userLocation: { lat: number; lng: number; city: string };
 }
 
+// Custom heritage pin icon (SVG, sand + brown)
+const heritageIcon = L.divIcon({
+  className: 'heritage-pin',
+  html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 28" width="22" height="26">
+    <path d="M12 0C7.5 0 4 3.5 4 8c0 5.5 8 20 8 20s8-14.5 8-20c0-4.5-3.5-8-8-8z"
+      fill="#a0522d" stroke="#fdf6e6" stroke-width="1.5"/>
+    <circle cx="12" cy="8" r="2.6" fill="#fdf6e6"/>
+  </svg>`,
+  iconSize: [22, 26],
+  iconAnchor: [11, 26],
+});
+
 export default function HomeMapPreview({ userLocation }: Props) {
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-  });
-
-  if (loadError) {
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-secondary/60 px-4 text-center">
-        <div>
-          <p className="font-heading text-xs text-heritage-brown">الخريطة غير متاحة حالياً</p>
-          <p className="mt-1 text-[10px] text-muted-foreground">
-            تأكد من تفعيل Billing و Maps JavaScript API
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isLoaded) {
-    return (
-      <div className="w-full h-full flex items-center justify-center">
-        <div className="w-5 h-5 rounded-full border-2 border-heritage-brown/30 border-t-heritage-brown animate-spin" />
-      </div>
-    );
-  }
+  // Show all cultural places on the home preview (same as map page)
+  const places = culturalPlaces;
 
   return (
-    <GoogleMap
-      mapContainerStyle={containerStyle}
-      center={{ lat: userLocation.lat, lng: userLocation.lng }}
+    <MapContainer
+      center={[userLocation.lat, userLocation.lng]}
       zoom={11}
-      options={{
-        styles: lightStyles,
-        disableDefaultUI: true,
-        gestureHandling: 'none',
-        clickableIcons: false,
-        keyboardShortcuts: false,
-      }}
+      style={{ width: '100%', height: '100%', background: '#fdf6e6' }}
+      zoomControl={false}
+      attributionControl={false}
+      dragging={false}
+      scrollWheelZoom={false}
+      doubleClickZoom={false}
+      touchZoom={false}
+      keyboard={false}
     >
-      <MarkerF
-        position={{ lat: userLocation.lat, lng: userLocation.lng }}
-        icon={{
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 7,
-          fillColor: '#2d8a9e',
-          fillOpacity: 1,
-          strokeColor: '#ffffff',
-          strokeWeight: 2,
-        }}
-        zIndex={999}
+      {/* Light, airy basemap (CartoDB Positron) */}
+      <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
+
+      {/* User location (teal dot) */}
+      <CircleMarker
+        center={[userLocation.lat, userLocation.lng]}
+        radius={7}
+        pathOptions={{ color: '#ffffff', weight: 2, fillColor: '#2d8a9e', fillOpacity: 1 }}
       />
-      {culturalPlaces.slice(0, 6).map((p) => (
-        <MarkerF
-          key={p.id}
-          position={{ lat: p.lat, lng: p.lng }}
-          icon={{
-            path: 'M12 0C7.5 0 4 3.5 4 8c0 5.5 8 16 8 16s8-10.5 8-16c0-4.5-3.5-8-8-8z',
-            fillColor: '#a0522d',
-            fillOpacity: 0.9,
-            strokeColor: '#fdf6e6',
-            strokeWeight: 1.5,
-            scale: 1.1,
-            anchor: new google.maps.Point(12, 24),
-          }}
-        />
+
+      {/* Cultural place pins */}
+      {places.map((p) => (
+        <Marker key={p.id} position={[p.lat, p.lng]} icon={heritageIcon} />
       ))}
-    </GoogleMap>
+    </MapContainer>
   );
 }
