@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Accessibility, X, Type, Contrast, Mic, Volume2 } from 'lucide-react';
+import { Accessibility, X, Type, Contrast, Mic, Volume2, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAccessibility } from '@/lib/accessibility';
 
@@ -17,27 +17,40 @@ export default function AccessibilityFab() {
     stopSpeaking,
   } = useAccessibility();
 
+  const anyActive = largeText || highContrast || voiceControl || isSpeaking;
+
   const readPage = () => {
     if (isSpeaking) {
       stopSpeaking();
       return;
     }
-    // Read main heading + paragraphs
-    const main = document.querySelector('main, [data-a11y-read], body');
+    const main = document.querySelector('[data-a11y-read], main, body');
     const text = main?.textContent?.slice(0, 1500) || '';
     speak(text);
   };
 
   return (
     <>
-      {/* FAB */}
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed top-3 right-3 z-[55] w-11 h-11 rounded-full bg-card/95 backdrop-blur border border-border shadow-md flex items-center justify-center active:scale-95 transition-transform"
-        aria-label="إعدادات إمكانية الوصول"
-      >
-        <Accessibility size={20} strokeWidth={1.7} className="text-heritage-brown" />
-      </button>
+      {/* Top accessibility bar — visible on every page */}
+      <div className="sticky top-0 z-[55] max-w-lg mx-auto">
+        <button
+          onClick={() => setOpen(true)}
+          className={`w-full flex items-center justify-between gap-2 px-4 py-2 backdrop-blur border-b border-border shadow-sm transition-colors ${
+            anyActive
+              ? 'bg-primary/15 text-heritage-brown'
+              : 'bg-card/95 text-heritage-brown'
+          }`}
+          aria-label="إعدادات إمكانية الوصول"
+        >
+          <ChevronDown size={14} className="text-heritage-brown/70" />
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-heading font-semibold">
+              إمكانية الوصول {anyActive && '• مُفعّلة'}
+            </span>
+            <Accessibility size={18} strokeWidth={1.8} className="text-heritage-brown" />
+          </div>
+        </button>
+      </div>
 
       <AnimatePresence>
         {open && (
