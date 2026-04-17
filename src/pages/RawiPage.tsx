@@ -424,12 +424,12 @@ export default function RawiPage() {
               className="absolute inset-0 z-30 bg-black/30 backdrop-blur-[2px]"
             />
             <motion.aside
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -20, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 280, damping: 28 }}
+              initial={{ x: '100%', opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: '100%', opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 280, damping: 30 }}
               dir="rtl"
-              className="absolute top-[140px] left-3 right-3 z-40 max-h-[60vh] bg-card border border-border rounded-2xl shadow-xl flex flex-col overflow-hidden"
+              className="absolute top-0 bottom-0 right-0 z-40 w-[82%] max-w-xs bg-card border-l border-border shadow-2xl flex flex-col overflow-hidden"
             >
               <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-secondary/40">
                 <button onClick={() => setHistoryOpen(false)} aria-label="إغلاق">
