@@ -131,3 +131,30 @@
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { scrollbar-width: none; }
 }
+
+/* ---- Accessibility modes ---- */
+html.a11y-large-text {
+  font-size: 118%;
+}
+html.a11y-high-contrast {
+  --background: 45 50% 98%;
+  --foreground: 0 0% 0%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 0%;
+  --primary: 25 90% 25%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 45 50% 92%;
+  --secondary-foreground: 0 0% 0%;
+  --muted: 45 30% 90%;
+  --muted-foreground: 0 0% 18%;
+  --border: 0 0% 30%;
+  --heritage-brown: 20 90% 18%;
+  --heritage-sand: 45 60% 85%;
+}
+html.a11y-high-contrast * {
+  text-shadow: none !important;
+}
+html.a11y-high-contrast .najdi-pattern,
+html.a11y-high-contrast .najdi-pattern-strong {
+  background-image: none !important;
+}
