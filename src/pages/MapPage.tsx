@@ -111,7 +111,7 @@ export default function MapPage() {
         {/* Top overlay: back + search bar */}
         <div className="absolute top-0 left-0 right-0 z-20 px-4 pt-12 pb-3 flex items-center gap-2">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/')}
             className="w-10 h-10 bg-card/95 backdrop-blur rounded-full flex items-center justify-center shadow-md border border-border flex-shrink-0"
           >
             <ArrowRight size={18} className="text-heritage-brown" />

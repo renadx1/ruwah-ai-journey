@@ -22,7 +22,7 @@ export default function ProfilePage() {
       <div className="gradient-heritage px-5 pt-12 pb-10 rounded-b-3xl">
         <div className="flex items-center justify-between mb-6">
           <AccessibilityButton tone="dark" />
-          <button onClick={() => navigate(-1)} aria-label="رجوع">
+          <button onClick={() => navigate('/')} aria-label="رجوع للرئيسية">
             <ArrowRight size={22} className="text-primary-foreground" />
           </button>
         </div>
