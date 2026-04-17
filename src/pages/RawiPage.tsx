@@ -227,6 +227,9 @@ export default function RawiPage() {
       {/* Header */}
       <div className="px-5 pt-12 pb-3">
         <div className="flex items-center justify-between mb-4">
+          <button onClick={() => navigate('/')} aria-label="رجوع للرئيسية">
+            <ArrowRight size={22} className="text-heritage-brown" />
+          </button>
           <div className="flex items-center gap-2">
             <AccessibilityButton tone="light" />
             <button
@@ -244,9 +247,6 @@ export default function RawiPage() {
               <Plus size={18} strokeWidth={1.8} />
             </button>
           </div>
-          <button onClick={() => navigate('/')} aria-label="رجوع للرئيسية">
-            <ArrowRight size={22} className="text-heritage-brown" />
-          </button>
         </div>
 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
