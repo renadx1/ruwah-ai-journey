@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ArrowRight, Send, Bot, User as UserIcon, Mic, Volume2, Square, Paperclip, X, History, Plus, Trash2 } from 'lucide-react';
+import { ArrowRight, Send, Bot, User as UserIcon, Mic, Volume2, Square, Paperclip, X, History, Plus, Trash2, BookOpen, MessageSquareQuote, ScrollText, Drama } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { learnCategories } from '@/lib/mockData';
@@ -35,32 +35,39 @@ function getAIResponse(message: string, place?: string): Promise<string> {
       if (place) {
         resolve(`${place} من أهم المعالم الثقافية في المنطقة. يعود تاريخه إلى عدة قرون ويمثل جزءًا أصيلاً من التراث السعودي.\n\nهل تريد معرفة المزيد عن تاريخه؟`);
       } else if (message.includes('مرادف')) {
-        resolve('🔤 من المرادفات المحلية:\n\n• "يبّه" = يا أبي\n• "زقرت" = صراخ من الفرح\n• "مسيّر ومخيّر" = مُجبر وحُر');
+        resolve('من المرادفات المحلية:\n\n• "يبّه" = يا أبي\n• "زقرت" = صراخ من الفرح\n• "مسيّر ومخيّر" = مُجبر وحُر');
       } else if (message.includes('مثل') || message.includes('أمثال')) {
-        resolve('💬 "اللي ما يعرف الصقر يشويه"\nالمعنى: من لا يعرف قيمة الشيء يضيّعه.\n\n💬 "كل شارد وله وارد"\nالمعنى: كل غائب سيعود يومًا.');
+        resolve('"اللي ما يعرف الصقر يشويه"\nالمعنى: من لا يعرف قيمة الشيء يضيّعه.\n\n"كل شارد وله وارد"\nالمعنى: كل غائب سيعود يومًا.');
       } else if (message.includes('قصة') || message.includes('قصص')) {
-        resolve('📖 من القصص التراثية: حاتم الطائي اشتهر بكرمه الشديد، ويُحكى أنه ذبح فرسه الوحيد لإكرام ضيف جاءه في ليلة باردة.');
+        resolve('من القصص التراثية: حاتم الطائي اشتهر بكرمه الشديد، ويُحكى أنه ذبح فرسه الوحيد لإكرام ضيف جاءه في ليلة باردة.');
       } else if (message.includes('تراث') || message.includes('عادات') || message.includes('ثقاف')) {
-        resolve('🎭 العرضة النجدية رقصة شعبية تقليدية تُؤدّى في المناسبات الوطنية. يصطف الرجال في صفّين متقابلين حاملين السيوف بمصاحبة الطبول والشعر الحماسي.');
+        resolve('العرضة النجدية رقصة شعبية تقليدية تُؤدّى في المناسبات الوطنية. يصطف الرجال في صفّين متقابلين حاملين السيوف بمصاحبة الطبول والشعر الحماسي.');
       } else if (message.includes('متحف') || message.includes('معالم')) {
-        resolve('من أبرز معالم الرياض:\n🏛️ المتحف الوطني السعودي\n🏰 حي الطريف بالدرعية\n🏯 قصر المصمك\n🏪 سوق الزل');
+        resolve('من أبرز معالم الرياض:\n• المتحف الوطني السعودي\n• حي الطريف بالدرعية\n• قصر المصمك\n• سوق الزل');
       } else if (message.includes('أكل') || message.includes('طعام')) {
-        resolve('من أشهر الأكلات الشعبية في نجد:\n🍚 الكبسة\n🫓 الجريش\n🍖 المطازيز\n☕ القهوة السعودية');
+        resolve('من أشهر الأكلات الشعبية في نجد:\n• الكبسة\n• الجريش\n• المطازيز\n• القهوة السعودية');
       } else if (message.includes('لهج')) {
         resolve('لهجة أهل الرياض من اللهجات النجدية. تتميّز بنطق الجيم جيماً قاهرية، وكثرة استخدام كلمات مثل: "وش"، "زين"، "يبّه"، "هرج" بمعنى كلام.');
       } else {
-        resolve('سؤال رائع! التراث السعودي غني ومتنوع.\n\nيمكنني مساعدتك في:\n• 🏰 المواقع التراثية\n• 📚 الأمثال والعادات\n• 🎭 الفنون الشعبية');
+        resolve('سؤال رائع! التراث السعودي غني ومتنوع.\n\nيمكنني مساعدتك في:\n• المواقع التراثية\n• الأمثال والعادات\n• الفنون الشعبية');
       }
     }, 800 + Math.random() * 500);
   });
 }
 
+const categoryIconMap: Record<string, React.ReactNode> = {
+  synonyms: <BookOpen size={18} className="text-heritage-brown" strokeWidth={1.6} />,
+  proverbs: <MessageSquareQuote size={18} className="text-heritage-brown" strokeWidth={1.6} />,
+  stories: <ScrollText size={18} className="text-heritage-brown" strokeWidth={1.6} />,
+  culture: <Drama size={18} className="text-heritage-brown" strokeWidth={1.6} />,
+};
+
 const makeWelcome = (placeName: string | null): Message => ({
   id: '0',
   role: 'assistant',
   content: placeName
-    ? `أهلًا وسهلًا 👋 أنا الراوي، مساعدك الذكي لاستكشاف ثقافة المنطقة.\nأراك مهتمًا بـ ${placeName} — اسألني أي شيء عنه!`
-    : 'أهلًا وسهلًا 👋 أنا الراوي، مساعدك الذكي لاستكشاف ثقافة المنطقة. اختر موضوعًا أو اسألني مباشرة.',
+    ? `أهلًا وسهلًا، أنا الراوي، مساعدك الذكي لاستكشاف ثقافة المنطقة.\nأراك مهتمًا بـ ${placeName} — اسألني أي شيء عنه!`
+    : 'أهلًا وسهلًا، أنا الراوي، مساعدك الذكي لاستكشاف ثقافة المنطقة. اختر موضوعًا أو اسألني مباشرة.',
 });
 
 function loadConversations(): Conversation[] {
@@ -330,7 +337,9 @@ export default function RawiPage() {
                 onClick={() => handleSend(categoryPrompts[cat.id])}
                 className="bg-card border border-border rounded-2xl p-3 text-right active:scale-[0.97] transition-transform shadow-sm flex items-center gap-2"
               >
-                <span className="text-xl grayscale-[40%] flex-shrink-0">{cat.icon}</span>
+                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                  {categoryIconMap[cat.id]}
+                </span>
                 <div className="flex-1 text-right min-w-0">
                   <h3 className="font-heading font-semibold text-xs text-heritage-brown truncate">
                     {cat.title}
