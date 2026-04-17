@@ -9,5 +9,15 @@
 - دعم كامل للعربية (RTL) وإمكانية الوصول
 - رفع المتاجر الثقافية لتظهر على الخريطة
 
+## التصميم
+- **Figma** — تصميم الواجهات والـ UI/UX
+- **Adobe Illustrator** — الأيقونات والرسوميات
+
 ## التقنيات
-React • Vite • TypeScript • Tailwind CSS • shadcn/ui • Framer Motion • Google Maps
+- **React + TypeScript** — واجهة المستخدم
+- **Vite** — أداة البناء والتطوير
+- **Tailwind CSS** — التنسيق والتصميم
+- **shadcn/ui** — مكتبة المكوّنات
+- **Framer Motion** — الحركات والانتقالات
+- **Google Maps API** — الخرائط التفاعلية
+- **React Router** — التنقل بين الصفحات
