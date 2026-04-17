@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Accessibility, X, Type, Contrast, Mic, Volume2, Plus, Minus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 import { useAccessibility } from '@/lib/accessibility';
 
 export default function AccessibilityFab() {
   const [open, setOpen] = useState(false);
+  const location = useLocation();
   const {
     largeText,
     highContrast,
@@ -31,15 +33,24 @@ export default function AccessibilityFab() {
     speak(text);
   };
 
+  // Hide on /map (already busy with back arrow + search overlay)
+  if (location.pathname === '/map') return null;
+
+  // Per-page positioning so the button sits naturally in the header without overlapping content.
+  // Home: aligned with the city chip (which is on the right) — button on the LEFT at the same row.
+  // Other pages: aligned with the back arrow row on the LEFT.
+  const isHome = location.pathname === '/';
+  const topClass = isHome ? 'top-12' : 'top-12';
+
   return (
     <>
-      {/* Accessibility button — solid white pill, pinned to the mobile frame's top-right corner */}
+      {/* Accessibility button — solid white circle, left side, aligned with each page's header row */}
       <div className="fixed top-0 left-0 right-0 z-[60] pointer-events-none flex justify-center">
         <div className="w-full max-w-lg relative h-0">
           <button
             onClick={() => setOpen(true)}
             aria-label="إعدادات إمكانية الوصول"
-            className={`pointer-events-auto absolute top-3 right-3 w-10 h-10 rounded-full border flex items-center justify-center transition-colors shadow-lg ${
+            className={`pointer-events-auto absolute ${topClass} left-5 w-10 h-10 rounded-full border flex items-center justify-center transition-colors shadow-md ${
               anyActive
                 ? 'bg-heritage-brown text-primary-foreground border-heritage-brown'
                 : 'bg-card text-heritage-brown border-border'
