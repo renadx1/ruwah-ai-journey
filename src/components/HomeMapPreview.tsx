@@ -1,79 +1,100 @@
-import { MapContainer, TileLayer, Marker, CircleMarker, Tooltip } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
 import { culturalPlaces } from '@/lib/mockData';
+
+const GOOGLE_MAPS_API_KEY = 'AIzaSyB__li1XnzJU765wUSkUiWai-p5G2h1UEk';
+
+const containerStyle = { width: '100%', height: '100%' };
+
+// EXACT same style as the main /map page
+const mapStyles: google.maps.MapTypeStyle[] = [
+  { elementType: 'geometry', stylers: [{ color: '#fdf6e6' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#8a6a45' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#ffffff' }] },
+  { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#e0cba6' }] },
+  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
+  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#f0e4cc' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#f5dca8' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#cfe4ec' }] },
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+  { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#fdf6e6' }] },
+];
 
 interface Props {
   userLocation: { lat: number; lng: number; city: string };
 }
 
-// Heritage pin — warm brown teardrop with cream center
-const heritageIcon = L.divIcon({
-  className: 'heritage-pin',
-  html: `<div style="filter: drop-shadow(0 2px 3px rgba(107,68,35,0.35));">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 30" width="26" height="32">
-      <path d="M12 0C6.5 0 2 4.3 2 9.6c0 6.8 10 20.4 10 20.4s10-13.6 10-20.4C22 4.3 17.5 0 12 0z"
-        fill="#8b5a2b" stroke="#fdf6e6" stroke-width="2"/>
-      <circle cx="12" cy="9.5" r="3.2" fill="#fdf6e6"/>
-      <circle cx="12" cy="9.5" r="1.4" fill="#8b5a2b"/>
-    </svg>
-  </div>`,
-  iconSize: [26, 32],
-  iconAnchor: [13, 32],
-});
-
-// User location — teal pulse
-const userIcon = L.divIcon({
-  className: 'user-pin',
-  html: `<div style="position:relative;width:18px;height:18px;">
-    <div style="position:absolute;inset:0;border-radius:50%;background:#2d8a9e;opacity:0.25;animation:pulse 2s infinite;"></div>
-    <div style="position:absolute;inset:4px;border-radius:50%;background:#2d8a9e;border:2px solid #ffffff;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div>
-  </div>
-  <style>@keyframes pulse{0%{transform:scale(1);opacity:0.5}100%{transform:scale(2.2);opacity:0}}</style>`,
-  iconSize: [18, 18],
-  iconAnchor: [9, 9],
-});
-
 export default function HomeMapPreview({ userLocation }: Props) {
-  const places = culturalPlaces;
+  const { isLoaded, loadError } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+  });
+
+  if (loadError) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-heritage-sand px-4 text-center">
+        <div>
+          <p className="font-heading text-xs text-heritage-brown">تعذر تحميل الخريطة</p>
+          <p className="mt-1 text-[10px] text-muted-foreground">
+            تأكد من تفعيل Billing و Maps JavaScript API
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isLoaded) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-heritage-sand">
+        <div className="w-5 h-5 rounded-full border-2 border-heritage-brown/30 border-t-heritage-brown animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <MapContainer
-      center={[userLocation.lat, userLocation.lng]}
+    <GoogleMap
+      mapContainerStyle={containerStyle}
+      center={{ lat: userLocation.lat, lng: userLocation.lng }}
       zoom={11}
-      style={{ width: '100%', height: '100%', background: '#fdf6e6' }}
-      zoomControl={false}
-      attributionControl={false}
-      dragging={false}
-      scrollWheelZoom={false}
-      doubleClickZoom={false}
-      touchZoom={false}
-      keyboard={false}
+      options={{
+        styles: mapStyles,
+        disableDefaultUI: true,
+        gestureHandling: 'none',
+        clickableIcons: false,
+        keyboardShortcuts: false,
+      }}
     >
-      {/* Warm watercolor basemap that matches the sand/heritage palette */}
-      <TileLayer
-        url="https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg"
-        className="heritage-tiles"
+      {/* User location pin (teal) — same as /map */}
+      <MarkerF
+        position={{ lat: userLocation.lat, lng: userLocation.lng }}
+        icon={{
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 9,
+          fillColor: '#2d8a9e',
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 3,
+        }}
+        zIndex={999}
       />
-      {/* Soft labels overlay */}
-      <TileLayer url="https://tiles.stadiamaps.com/tiles/stamen_terrain_labels/{z}/{x}/{y}{r}.png" />
 
-      {/* User location */}
-      <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon} />
-
-      {/* Cultural place pins */}
-      {places.map((p) => (
-        <Marker key={p.id} position={[p.lat, p.lng]} icon={heritageIcon}>
-          <Tooltip
-            direction="top"
-            offset={[0, -28]}
-            opacity={1}
-            className="heritage-tooltip"
-          >
-            {p.name}
-          </Tooltip>
-        </Marker>
+      {/* All cultural place pins — same as /map */}
+      {culturalPlaces.map((place) => (
+        <MarkerF
+          key={place.id}
+          position={{ lat: place.lat, lng: place.lng }}
+          title={place.name}
+          icon={{
+            path: 'M12 0C7.5 0 4 3.5 4 8c0 5.5 8 16 8 16s8-10.5 8-16c0-4.5-3.5-8-8-8z',
+            fillColor: '#a0522d',
+            fillOpacity: 1,
+            strokeColor: '#fdf6e6',
+            strokeWeight: 2,
+            scale: 1.6,
+            anchor: new google.maps.Point(12, 24),
+          }}
+        />
       ))}
-    </MapContainer>
+    </GoogleMap>
   );
 }
