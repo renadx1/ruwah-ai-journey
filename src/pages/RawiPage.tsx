@@ -152,30 +152,7 @@ export default function RawiPage() {
         </motion.div>
       </div>
 
-      {/* Category cards (Learn merged into chat) */}
-      <div className="px-4 grid grid-cols-2 gap-2 mb-2" dir="rtl">
-        {learnCategories.map((cat, i) => (
-          <motion.button
-            key={cat.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 + i * 0.05 }}
-            onClick={() => handleSend(categoryPrompts[cat.id])}
-            disabled={isTyping}
-            className="bg-card border border-border rounded-2xl p-3 text-right active:scale-[0.97] transition-transform shadow-sm flex items-center gap-2 disabled:opacity-50"
-          >
-            <span className="text-xl grayscale-[40%] flex-shrink-0">{cat.icon}</span>
-            <div className="flex-1 text-right min-w-0">
-              <h3 className="font-heading font-semibold text-xs text-heritage-brown truncate">
-                {cat.title}
-              </h3>
-              <p className="text-[10px] text-muted-foreground truncate">{cat.description}</p>
-            </div>
-          </motion.button>
-        ))}
-      </div>
-
-      {/* Messages */}
+      {/* Messages — welcome message first, category cards appear underneath */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
         {messages.map((msg) => (
           <motion.div
@@ -222,6 +199,43 @@ export default function RawiPage() {
         {isTyping && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-end">
             <div className="bg-card border border-border rounded-2xl px-4 py-3 rounded-br-sm">
+              <div className="flex gap-1">
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={i}
+                    className="w-2 h-2 bg-heritage-brown/60 rounded-full"
+                    animate={{ y: [0, -5, 0] }}
+                    transition={{ repeat: Infinity, duration: 0.6, delay: i * 0.15 }}
+                  />
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Category prompts — appear under the welcome message */}
+        {messages.length === 1 && !isTyping && (
+          <div className="grid grid-cols-2 gap-2 pt-2" dir="rtl">
+            {learnCategories.map((cat, i) => (
+              <motion.button
+                key={cat.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + i * 0.05 }}
+                onClick={() => handleSend(categoryPrompts[cat.id])}
+                className="bg-card border border-border rounded-2xl p-3 text-right active:scale-[0.97] transition-transform shadow-sm flex items-center gap-2"
+              >
+                <span className="text-xl grayscale-[40%] flex-shrink-0">{cat.icon}</span>
+                <div className="flex-1 text-right min-w-0">
+                  <h3 className="font-heading font-semibold text-xs text-heritage-brown truncate">
+                    {cat.title}
+                  </h3>
+                  <p className="text-[10px] text-muted-foreground truncate">{cat.description}</p>
+                </div>
+              </motion.button>
+            ))}
+          </div>
+        )}
               <div className="flex gap-1">
                 {[0, 1, 2].map((i) => (
                   <motion.div
