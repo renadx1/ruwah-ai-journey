@@ -33,21 +33,25 @@ export default function AccessibilityFab() {
 
   return (
     <>
-      {/* Accessibility button — sits inside page header, top-left, blends with header chips */}
-      <button
-        onClick={() => setOpen(true)}
-        aria-label="إعدادات إمكانية الوصول"
-        className={`fixed top-12 left-5 z-[55] w-9 h-9 rounded-full backdrop-blur-sm border flex items-center justify-center transition-colors ${
-          anyActive
-            ? 'bg-heritage-brown text-primary-foreground border-heritage-brown shadow-md'
-            : 'bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30 hover:bg-primary-foreground/30'
-        }`}
-      >
-        <Accessibility size={16} strokeWidth={2} />
-        {anyActive && (
-          <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-primary border-2 border-card" />
-        )}
-      </button>
+      {/* Accessibility button — pinned to the mobile frame's top-left, visible on EVERY page */}
+      <div className="fixed top-0 left-0 right-0 z-[60] pointer-events-none flex justify-center">
+        <div className="w-full max-w-lg relative h-0">
+          <button
+            onClick={() => setOpen(true)}
+            aria-label="إعدادات إمكانية الوصول"
+            className={`pointer-events-auto absolute top-12 left-5 w-10 h-10 rounded-full backdrop-blur-md border flex items-center justify-center transition-colors shadow-md ${
+              anyActive
+                ? 'bg-heritage-brown text-primary-foreground border-heritage-brown'
+                : 'bg-card/95 text-heritage-brown border-border'
+            }`}
+          >
+            <Accessibility size={18} strokeWidth={2} />
+            {anyActive && (
+              <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-primary border-2 border-card" />
+            )}
+          </button>
+        </div>
+      </div>
 
       <AnimatePresence>
         {open && (
