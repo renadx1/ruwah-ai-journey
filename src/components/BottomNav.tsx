@@ -1,6 +1,5 @@
 import { Home, Map, BookOpen, User, LifeBuoy } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 
 // Side tabs (RTL): right side first, then left side. Center is Home (raised).
 const sideTabs = [
@@ -77,24 +76,16 @@ export default function BottomNav() {
           </div>
         </div>
 
-        {/* Center elevated Home button */}
-        <motion.button
+        {/* Center elevated Home button — fixed, no label, no movement */}
+        <button
           onClick={() => navigate('/')}
-          whileTap={{ scale: 0.92 }}
           className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/3 flex flex-col items-center"
           aria-label="الرئيسية"
         >
-          <div
-            className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg ring-4 ring-background bg-gradient-to-br from-heritage-brown to-primary transition-transform ${
-              homeActive ? 'scale-105' : ''
-            }`}
-          >
+          <div className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg ring-4 ring-background bg-gradient-to-br from-heritage-brown to-primary">
             <Home size={26} strokeWidth={1.8} className="text-primary-foreground" />
           </div>
-          <span className="text-[10px] font-heading mt-1 font-bold text-heritage-brown">
-            الرئيسية
-          </span>
-        </motion.button>
+        </button>
       </div>
       {/* Safe area fill */}
       <div className="bg-background h-[env(safe-area-inset-bottom)]" />
