@@ -16,7 +16,9 @@ export default function ShareInviteModal({ open, onClose }: Props) {
   const [copied, setCopied] = useState(false);
   const [justClaimed, setJustClaimed] = useState(false);
 
-  const fullText = `${SHARE_MESSAGE} ${code}\n${link}`;
+  // Only include the link once — most chat apps auto-generate a preview from a single URL.
+  const fullText = `${SHARE_MESSAGE} ${code}`;
+  const shareTextWithLink = `${fullText}\n${link}`;
 
   const grantShareBonus = () => {
     const bonus = claimShareBonus();
