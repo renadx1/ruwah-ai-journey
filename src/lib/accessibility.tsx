@@ -218,6 +218,7 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
         speak,
         stopSpeaking,
         isSpeaking,
+        isAudioLoading,
       }}
     >
       {children}
