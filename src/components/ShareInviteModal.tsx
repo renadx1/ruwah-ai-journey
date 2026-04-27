@@ -8,7 +8,7 @@ interface Props {
   onClose: () => void;
 }
 
-const SHARE_MESSAGE = 'انضم لي في تطبيق "رواة" وخلّنا نستكشف معالم وأماكن المملكة سوا بطريقة ممتعة وتفاعلية! استخدم رمز دعوتي:';
+const SHARE_MESSAGE = 'تعال جرّب تطبيق "رواة" واكتشف معي ثقافة المنطقة وتراث المملكة بطريقة ممتعة! استخدم رمز دعوتي:';
 
 export default function ShareInviteModal({ open, onClose }: Props) {
   const { code, link, hasClaimedShareBonus, recordShare, claimShareBonus } = useReferral();
