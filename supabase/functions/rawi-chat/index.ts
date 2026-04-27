@@ -1,7 +1,7 @@
 import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.0/cors";
 
-const ELM_BASE_URL = "https://elmodels.ngrok.app/v1";
-const MODEL_NAME = "nuha-2.0";
+const AI_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const MODEL_NAME = "google/gemini-2.5-flash";
 
 const SYSTEM_PROMPT = `أنت "الراوي"، شاب سعودي من الرياض، تسولف مع ربعك سواليف عادية يوم بيوم. مو روبوت ولا مرشد سياحي، بس واحد من أهل الديرة قاعد يدردش.
 
