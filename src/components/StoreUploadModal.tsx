@@ -36,6 +36,7 @@ export default function StoreUploadModal({
         parking: false,
         restroom: false,
         photos: '',
+        mapUrl: '',
       });
       onClose();
     }, 1800);
