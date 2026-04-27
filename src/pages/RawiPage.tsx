@@ -11,6 +11,7 @@ interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  images?: string[]; // data URLs for previewing user-uploaded images in the bubble
 }
 
 interface Conversation {
