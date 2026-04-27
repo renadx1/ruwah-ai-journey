@@ -112,21 +112,10 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
     }
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 
-    // INSTANT FEEDBACK: start browser TTS immediately so user hears voice without delay
     setIsSpeaking(true);
     setIsAudioLoading(true);
-    let browserStarted = false;
-    if ('speechSynthesis' in window) {
-      const utter = new SpeechSynthesisUtterance(cleaned);
-      utter.lang = 'ar-SA';
-      utter.rate = 1.0;
-      utter.onend = () => setIsSpeaking(false);
-      utter.onerror = () => {};
-      window.speechSynthesis.speak(utter);
-      browserStarted = true;
-    }
 
-    // In parallel try Elm TTS; if it returns quickly we swap to higher-quality voice
+    // Fetch Elm TTS audio (the user wants the high-quality voice, not the OS voice)
     const controller = new AbortController();
     ttsAbortRef.current = controller;
     try {
@@ -143,10 +132,6 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
       const blob = await resp.blob();
       if (!blob.type.startsWith('audio')) throw new Error('Invalid audio response');
 
-      // Swap browser TTS for the high-quality audio
-      if (browserStarted && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
       const url = URL.createObjectURL(blob);
       audioUrlRef.current = url;
       const audio = new Audio(url);
@@ -165,14 +150,13 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
       setIsAudioLoading(false);
       await audio.play();
     } catch (err) {
-      // If browser TTS already running, just let it finish
-      if (!browserStarted) {
-        speakBrowserFallback(cleaned);
-      } else {
-        setIsAudioLoading(false);
-      }
+      // Only fall back to browser TTS if Elm fails (network/quota), so users still hear something.
       if ((err as any)?.name !== 'AbortError') {
         console.warn('Elm TTS failed, using browser fallback:', err);
+        speakBrowserFallback(cleaned);
+      } else {
+        setIsSpeaking(false);
+        setIsAudioLoading(false);
       }
     }
   }, [speakBrowserFallback]);
