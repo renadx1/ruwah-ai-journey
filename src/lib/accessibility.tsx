@@ -14,6 +14,7 @@ type AccessibilityState = {
   speak: (text: string) => void;
   stopSpeaking: () => void;
   isSpeaking: boolean;
+  isAudioLoading: boolean;
 };
 
 const Ctx = createContext<AccessibilityState | null>(null);
