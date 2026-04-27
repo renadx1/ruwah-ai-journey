@@ -145,7 +145,16 @@ const makeWelcome = (placeName: string | null): Message => ({
 function loadConversations(): Conversation[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const list = JSON.parse(raw) as Conversation[];
+    // Drop placeholder image markers so we never render broken <img> tags
+    return list.map((c) => ({
+      ...c,
+      messages: (c.messages || []).map((m) => ({
+        ...m,
+        images: m.images?.filter((s) => s && s.startsWith('data:')) ,
+      })),
+    }));
   } catch {
     return [];
   }
