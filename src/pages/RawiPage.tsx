@@ -11,6 +11,7 @@ interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  images?: string[]; // data URLs for previewing user-uploaded images in the bubble
 }
 
 interface Conversation {
@@ -30,29 +31,35 @@ const categoryPrompts: Record<string, string> = {
 };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rawi-chat`;
+const VISION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rawi-vision`;
 
-async function streamElmChat({
-  messages,
-  place,
-  onDelta,
-}: {
-  messages: { role: 'user' | 'assistant'; content: string }[];
-  place?: string;
-  onDelta: (chunk: string) => void;
-}) {
-  const resp = await fetch(CHAT_URL, {
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+async function streamSSE(
+  url: string,
+  body: any,
+  onDelta: (chunk: string) => void
+) {
+  const resp = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
     },
-    body: JSON.stringify({ messages, place }),
+    body: JSON.stringify(body),
   });
 
   if (!resp.ok || !resp.body) {
     if (resp.status === 429) throw new Error('تم تجاوز حد الطلبات. حاول بعد قليل.');
     if (resp.status === 402) throw new Error('انتهى الرصيد. يرجى إضافة رصيد.');
-    let errMsg = 'تعذّر الاتصال بنموذج علم.';
+    let errMsg = 'تعذّر الاتصال بالمساعد.';
     try {
       const j = await resp.json();
       if (j?.error) errMsg = j.error;
@@ -92,6 +99,32 @@ async function streamElmChat({
       }
     }
   }
+}
+
+async function streamElmChat({
+  messages,
+  place,
+  onDelta,
+}: {
+  messages: { role: 'user' | 'assistant'; content: string }[];
+  place?: string;
+  onDelta: (chunk: string) => void;
+}) {
+  return streamSSE(CHAT_URL, { messages, place }, onDelta);
+}
+
+async function streamVision({
+  images,
+  prompt,
+  place,
+  onDelta,
+}: {
+  images: string[];
+  prompt?: string;
+  place?: string;
+  onDelta: (chunk: string) => void;
+}) {
+  return streamSSE(VISION_URL, { images, prompt, place }, onDelta);
 }
 
 const categoryIconMap: Record<string, React.ReactNode> = {
@@ -196,17 +229,33 @@ export default function RawiPage() {
 
   const handleSend = async (forced?: string) => {
     const text = (forced ?? input).trim();
-    const hasFiles = attachments.length > 0;
+    const filesToSend = attachments;
+    const hasFiles = filesToSend.length > 0;
     if ((!text && !hasFiles) || isTyping) return;
-    const fileNote = hasFiles ? `\n\n📎 ${attachments.map((f) => f.name).join('، ')}` : '';
+
+    // Split: images go to vision, other files (pdf/doc) shown as note for now
+    const imageFiles = filesToSend.filter((f) => f.type.startsWith('image/'));
+    const otherFiles = filesToSend.filter((f) => !f.type.startsWith('image/'));
+
+    let imageDataUrls: string[] = [];
+    if (imageFiles.length > 0) {
+      try {
+        imageDataUrls = await Promise.all(imageFiles.map(fileToDataUrl));
+      } catch {
+        imageDataUrls = [];
+      }
+    }
+
+    const fileNote = otherFiles.length > 0
+      ? `\n\n📎 ${otherFiles.map((f) => f.name).join('، ')}`
+      : '';
+
     const userMsg: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: (text || 'أرسلت ملف للتحليل') + fileNote,
+      content: (text || (imageDataUrls.length > 0 ? 'تعرّف على هذه الصورة' : 'أرسلت ملف للتحليل')) + fileNote,
+      images: imageDataUrls.length > 0 ? imageDataUrls : undefined,
     };
-    const historyForApi = [...messages, userMsg]
-      .filter((m) => m.id !== '0')
-      .map((m) => ({ role: m.role, content: m.content }));
 
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
@@ -217,23 +266,39 @@ export default function RawiPage() {
     let acc = '';
     let firstChunk = true;
 
+    const onDelta = (chunk: string) => {
+      acc += chunk;
+      if (firstChunk) {
+        firstChunk = false;
+        setIsTyping(false);
+        setMessages((prev) => [...prev, { id: assistantId, role: 'assistant', content: acc }]);
+      } else {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === assistantId ? { ...m, content: acc } : m))
+        );
+      }
+    };
+
     try {
-      await streamElmChat({
-        messages: historyForApi,
-        place: placeName || undefined,
-        onDelta: (chunk) => {
-          acc += chunk;
-          if (firstChunk) {
-            firstChunk = false;
-            setIsTyping(false);
-            setMessages((prev) => [...prev, { id: assistantId, role: 'assistant', content: acc }]);
-          } else {
-            setMessages((prev) =>
-              prev.map((m) => (m.id === assistantId ? { ...m, content: acc } : m))
-            );
-          }
-        },
-      });
+      if (imageDataUrls.length > 0) {
+        // Vision flow — uses Lovable AI Gateway (Gemini) for heritage element recognition
+        await streamVision({
+          images: imageDataUrls,
+          prompt: text || undefined,
+          place: placeName || undefined,
+          onDelta,
+        });
+      } else {
+        const historyForApi = [...messages, userMsg]
+          .filter((m) => m.id !== '0')
+          .map((m) => ({ role: m.role, content: m.content }));
+        await streamElmChat({
+          messages: historyForApi,
+          place: placeName || undefined,
+          onDelta,
+        });
+      }
+
       if (firstChunk) {
         setIsTyping(false);
         setMessages((prev) => [
@@ -379,6 +444,18 @@ export default function RawiPage() {
                   </button>
                 )}
               </div>
+              {msg.images && msg.images.length > 0 && (
+                <div className={`mb-2 grid gap-1.5 ${msg.images.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                  {msg.images.map((src, i) => (
+                    <img
+                      key={i}
+                      src={src}
+                      alt="صورة مرفقة"
+                      className="rounded-xl max-h-48 w-full object-cover border border-border/30"
+                    />
+                  ))}
+                </div>
+              )}
               <div className="text-sm leading-relaxed whitespace-pre-line">
                 {msg.content.replace(/\*\*/g, '')}
               </div>
