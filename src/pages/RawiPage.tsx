@@ -145,14 +145,53 @@ const makeWelcome = (placeName: string | null): Message => ({
 function loadConversations(): Conversation[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const list = JSON.parse(raw) as Conversation[];
+    // Drop placeholder image markers so we never render broken <img> tags
+    return list.map((c) => ({
+      ...c,
+      messages: (c.messages || []).map((m) => ({
+        ...m,
+        images: m.images?.filter((s) => s && s.startsWith('data:')) ,
+      })),
+    }));
   } catch {
     return [];
   }
 }
 
+// Strip heavy fields (base64 images, very long content) before persisting.
+// localStorage has ~5MB quota; data-URL images blow past it instantly.
+function sanitizeForStorage(list: Conversation[]): Conversation[] {
+  return list.map((c) => ({
+    ...c,
+    messages: c.messages.map((m) => ({
+      id: m.id,
+      role: m.role,
+      content: m.content.length > 4000 ? m.content.slice(0, 4000) + '…' : m.content,
+      images: m.images && m.images.length > 0
+        ? m.images.map(() => '__image_omitted__')
+        : undefined,
+    })),
+  }));
+}
+
 function saveConversations(list: Conversation[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  let trimmed = sanitizeForStorage(list).slice(0, 20);
+  // Retry-by-shrinking if quota is still exceeded
+  while (trimmed.length > 0) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+      return;
+    } catch (err) {
+      if ((err as any)?.name === 'QuotaExceededError' || String(err).includes('quota')) {
+        trimmed = trimmed.slice(0, Math.max(1, Math.floor(trimmed.length / 2)));
+      } else {
+        return; // give up silently on other errors
+      }
+    }
+  }
+  try { localStorage.removeItem(STORAGE_KEY); } catch {}
 }
 
 export default function RawiPage() {
