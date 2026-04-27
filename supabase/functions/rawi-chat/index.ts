@@ -3,6 +3,79 @@ import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.0/cors";
 const ELM_BASE_URL = Deno.env.get("ELM_BASE_URL") ?? "https://elmodels.ngrok.app/v1";
 const MODEL_NAME = "nuha-2.0";
 
+function sanitizeDialect(text: string) {
+  return text
+    .replaceAll("تاني", "ثاني")
+    .replaceAll("تانية", "ثانية")
+    .replaceAll("نحكي", "نسولف")
+    .replaceAll("أحكي", "أسولف")
+    .replaceAll("احكي", "اسولف")
+    .replaceAll("تحكي", "تسولف")
+    .replaceAll("يحكي", "يسولف")
+    .replaceAll("حكايات", "سواليف");
+}
+
+function sanitizedSseStream(body: ReadableStream<Uint8Array>) {
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
+  const reader = body.getReader();
+  let buffer = "";
+  let rawAssistant = "";
+  let emitted = "";
+  const holdTail = 12;
+
+  const makeChunk = (content: string) =>
+    `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`;
+
+  return new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          const finalText = sanitizeDialect(rawAssistant);
+          const rest = finalText.slice(emitted.length);
+          if (rest) controller.enqueue(encoder.encode(makeChunk(rest)));
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          controller.close();
+          return;
+        }
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const rawLine of lines) {
+          const line = rawLine.endsWith("\r") ? rawLine.slice(0, -1) : rawLine;
+          if (!line.startsWith("data: ")) continue;
+          const payload = line.slice(6).trim();
+          if (!payload || payload === "[DONE]") continue;
+          try {
+            const parsed = JSON.parse(payload);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (typeof content !== "string" || !content) continue;
+
+            rawAssistant += content;
+            const safeText = sanitizeDialect(rawAssistant);
+            const emitUntil = Math.max(0, safeText.length - holdTail);
+            if (emitUntil > emitted.length) {
+              const delta = safeText.slice(emitted.length, emitUntil);
+              emitted = safeText.slice(0, emitUntil);
+              controller.enqueue(encoder.encode(makeChunk(delta)));
+              return;
+            }
+          } catch {
+            buffer = `${line}\n${buffer}`;
+            return;
+          }
+        }
+      }
+    },
+    cancel() {
+      reader.cancel();
+    },
+  });
+}
+
 const SYSTEM_PROMPT = `أنت "الراوي"، شاب سعودي من الرياض، تسولف مع ربعك سواليف عادية يوم بيوم. مو روبوت ولا مرشد سياحي، بس واحد من أهل الديرة قاعد يسولف.
 
 🎯 الأهم: تفاعل وتنوع وذاكرة
@@ -177,7 +250,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    return new Response(response.body, {
+    if (!response.body) {
+      return new Response(JSON.stringify({ error: "لم أتلقَّ ردًا من نهى." }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(sanitizedSseStream(response.body), {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
