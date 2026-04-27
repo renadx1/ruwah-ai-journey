@@ -16,7 +16,9 @@ export default function ShareInviteModal({ open, onClose }: Props) {
   const [copied, setCopied] = useState(false);
   const [justClaimed, setJustClaimed] = useState(false);
 
-  const fullText = `${SHARE_MESSAGE} ${code}\n${link}`;
+  // Only include the link once — most chat apps auto-generate a preview from a single URL.
+  const fullText = `${SHARE_MESSAGE} ${code}`;
+  const shareTextWithLink = `${fullText}\n${link}`;
 
   const grantShareBonus = () => {
     const bonus = claimShareBonus();
@@ -30,7 +32,7 @@ export default function ShareInviteModal({ open, onClose }: Props) {
 
   const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(fullText);
+      await navigator.clipboard.writeText(shareTextWithLink);
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
       grantShareBonus();
@@ -53,19 +55,20 @@ export default function ShareInviteModal({ open, onClose }: Props) {
     grantShareBonus();
   };
 
-  const enc = encodeURIComponent(fullText);
+  const enc = encodeURIComponent(fullText); // text without URL — apps auto-attach preview
+  const encWithLink = encodeURIComponent(shareTextWithLink); // for email where no preview is generated
   const channels = [
     {
       name: 'واتساب',
       icon: MessageCircle,
       bg: 'bg-[#25D366]',
-      onClick: () => openExternal(`https://wa.me/?text=${enc}`),
+      onClick: () => openExternal(`https://wa.me/?text=${enc}%20${encodeURIComponent(link)}`),
     },
     {
       name: 'تويتر',
       icon: Twitter,
       bg: 'bg-[#1DA1F2]',
-      onClick: () => openExternal(`https://twitter.com/intent/tweet?text=${enc}`),
+      onClick: () => openExternal(`https://twitter.com/intent/tweet?text=${enc}&url=${encodeURIComponent(link)}`),
     },
     {
       name: 'تيليجرام',
@@ -77,7 +80,7 @@ export default function ShareInviteModal({ open, onClose }: Props) {
       name: 'البريد',
       icon: Mail,
       bg: 'bg-heritage-brown',
-      onClick: () => openExternal(`mailto:?subject=${encodeURIComponent('جرّب رواة')}&body=${enc}`),
+      onClick: () => openExternal(`mailto:?subject=${encodeURIComponent('جرّب رواة')}&body=${encWithLink}`),
     },
   ];
 
