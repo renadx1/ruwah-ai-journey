@@ -30,29 +30,35 @@ const categoryPrompts: Record<string, string> = {
 };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rawi-chat`;
+const VISION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rawi-vision`;
 
-async function streamElmChat({
-  messages,
-  place,
-  onDelta,
-}: {
-  messages: { role: 'user' | 'assistant'; content: string }[];
-  place?: string;
-  onDelta: (chunk: string) => void;
-}) {
-  const resp = await fetch(CHAT_URL, {
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+async function streamSSE(
+  url: string,
+  body: any,
+  onDelta: (chunk: string) => void
+) {
+  const resp = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
     },
-    body: JSON.stringify({ messages, place }),
+    body: JSON.stringify(body),
   });
 
   if (!resp.ok || !resp.body) {
     if (resp.status === 429) throw new Error('تم تجاوز حد الطلبات. حاول بعد قليل.');
     if (resp.status === 402) throw new Error('انتهى الرصيد. يرجى إضافة رصيد.');
-    let errMsg = 'تعذّر الاتصال بنموذج علم.';
+    let errMsg = 'تعذّر الاتصال بالمساعد.';
     try {
       const j = await resp.json();
       if (j?.error) errMsg = j.error;
@@ -92,6 +98,32 @@ async function streamElmChat({
       }
     }
   }
+}
+
+async function streamElmChat({
+  messages,
+  place,
+  onDelta,
+}: {
+  messages: { role: 'user' | 'assistant'; content: string }[];
+  place?: string;
+  onDelta: (chunk: string) => void;
+}) {
+  return streamSSE(CHAT_URL, { messages, place }, onDelta);
+}
+
+async function streamVision({
+  images,
+  prompt,
+  place,
+  onDelta,
+}: {
+  images: string[];
+  prompt?: string;
+  place?: string;
+  onDelta: (chunk: string) => void;
+}) {
+  return streamSSE(VISION_URL, { images, prompt, place }, onDelta);
 }
 
 const categoryIconMap: Record<string, React.ReactNode> = {
