@@ -444,6 +444,18 @@ export default function RawiPage() {
                   </button>
                 )}
               </div>
+              {msg.images && msg.images.length > 0 && (
+                <div className={`mb-2 grid gap-1.5 ${msg.images.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                  {msg.images.map((src, i) => (
+                    <img
+                      key={i}
+                      src={src}
+                      alt="صورة مرفقة"
+                      className="rounded-xl max-h-48 w-full object-cover border border-border/30"
+                    />
+                  ))}
+                </div>
+              )}
               <div className="text-sm leading-relaxed whitespace-pre-line">
                 {msg.content.replace(/\*\*/g, '')}
               </div>
