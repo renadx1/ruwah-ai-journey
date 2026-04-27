@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowRight, Mail, MessageCircle, Phone, HelpCircle, Headset, Star, Gift } from 'lucide-react';
+import { ArrowRight, Mail, MessageCircle, Phone, HelpCircle, Headset } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { AccessibilityButton } from '@/components/AccessibilityFab';
