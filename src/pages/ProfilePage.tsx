@@ -106,7 +106,7 @@ export default function ProfilePage() {
           transition={{ delay: 0.1 }}
           onClick={() => setShareOpen(true)}
           className="w-full rounded-2xl p-4 flex items-center gap-4 text-right text-primary-foreground shadow-md active:scale-[0.98] transition-transform"
-          style={{ backgroundColor: '#8A5128' }}
+          style={{ backgroundImage: 'linear-gradient(135deg, #8A5128, #6E4125)' }}
         >
           <div className="w-11 h-11 rounded-2xl bg-primary-foreground/20 flex items-center justify-center flex-shrink-0">
             <Megaphone size={20} strokeWidth={1.7} />
