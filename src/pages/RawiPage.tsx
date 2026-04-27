@@ -24,10 +24,10 @@ interface Conversation {
 const STORAGE_KEY = 'ruwat_conversations';
 
 const categoryPrompts: Record<string, string> = {
-  synonyms: 'علّمني بعض المرادفات المحلية في نجد',
-  proverbs: 'احكِ لي مثلاً شعبياً نجدياً ومعناه',
-  stories: 'احكِ لي قصة تراثية من الرياض',
-  culture: 'أخبرني عن التراث الثقافي في الرياض',
+  synonyms: 'قل لي شوي كلمات نستخدمها في نجد ومعناها',
+  proverbs: 'قل لي مثل شعبي نجدي ووش معناه',
+  stories: 'سولف لي سالفة قديمة من الرياض',
+  culture: 'قل لي عن العادات والتراث في الرياض',
 };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rawi-chat`;
