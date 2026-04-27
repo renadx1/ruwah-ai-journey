@@ -53,7 +53,7 @@ export function useReferral() {
   );
 
   // Branded share link — never expose the underlying preview/host domain in shares
-  const SHARE_BASE = 'https://ruwah.app';
+  const SHARE_BASE = 'https://ruwah-ai.vercel.app';
   const link = `${SHARE_BASE}/?ref=${code}`;
 
   const recordShare = useCallback(() => {

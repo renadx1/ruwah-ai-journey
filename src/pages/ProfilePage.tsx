@@ -105,7 +105,7 @@ export default function ProfilePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           onClick={() => setShareOpen(true)}
-          className="w-full rounded-2xl p-4 flex items-center gap-4 text-right bg-[hsl(var(--heritage-terracotta))] text-primary-foreground shadow-md active:scale-[0.98] transition-transform"
+          className="w-full rounded-2xl p-4 flex items-center gap-4 text-right bg-heritage-brown text-primary-foreground shadow-md active:scale-[0.98] transition-transform"
         >
           <div className="w-11 h-11 rounded-2xl bg-primary-foreground/20 flex items-center justify-center flex-shrink-0">
             <Megaphone size={20} strokeWidth={1.7} />
