@@ -53,6 +53,35 @@ export default function SupportPage() {
         </motion.div>
       </div>
 
+      {/* Rewards explainer */}
+      <div className="px-5 mb-3">
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-br from-secondary to-card border border-border rounded-2xl p-4 text-right shadow-sm"
+        >
+          <div className="flex items-center gap-2 mb-2 justify-end">
+            <h3 className="font-heading font-bold text-sm text-heritage-brown">نظام النقاط والمكافآت</h3>
+            <Gift size={18} className="text-heritage-brown" strokeWidth={1.7} />
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            اجمع نقاطك من تفاعلك مع التطبيق، ومن مشاركة رواة مع أصدقائك. كل ما وصلت لـ
+            <span className="font-bold text-heritage-brown"> ١٠٠ نقطة </span>
+            تختار مكافأتك:
+          </p>
+          <ul className="mt-2 space-y-1.5 text-xs text-foreground/80">
+            <li className="flex items-center gap-2 justify-end">
+              <span>كود خصم من المتاجر والمحلات المتعاونة معنا</span>
+              <Star size={12} className="text-heritage-brown flex-shrink-0" />
+            </li>
+            <li className="flex items-center gap-2 justify-end">
+              <span>تذكرة دخول مجانية لأحد المعالم الشريكة</span>
+              <Star size={12} className="text-heritage-brown flex-shrink-0" />
+            </li>
+          </ul>
+        </motion.div>
+      </div>
+
       <div className="px-5 space-y-3">
         {channels.map((c, i) => (
           <motion.a
