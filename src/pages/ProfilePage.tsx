@@ -99,24 +99,24 @@ export default function ProfilePage() {
           </button>
         </motion.div>
 
-        {/* Share/invite — solid brown CTA, placed AFTER username */}
+        {/* Share/invite — warm terracotta CTA, distinct from the brown header */}
         <motion.button
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           onClick={() => setShareOpen(true)}
-          className="w-full rounded-2xl p-4 flex items-center gap-4 text-right bg-heritage-brown text-primary-foreground shadow-md active:scale-[0.98] transition-transform"
+          className="w-full rounded-2xl p-4 flex items-center gap-4 text-right bg-[hsl(var(--heritage-terracotta))] text-primary-foreground shadow-md active:scale-[0.98] transition-transform"
         >
-          <div className="w-11 h-11 rounded-2xl bg-primary-foreground/15 flex items-center justify-center flex-shrink-0">
+          <div className="w-11 h-11 rounded-2xl bg-primary-foreground/20 flex items-center justify-center flex-shrink-0">
             <Megaphone size={20} strokeWidth={1.7} />
           </div>
           <div className="flex-1 text-right">
             <h3 className="font-heading font-bold text-sm">انشر التطبيق واكسب نقاط</h3>
-            <p className="text-[11px] opacity-80 mt-0.5">
+            <p className="text-[11px] opacity-90 mt-0.5">
               ٣٠ نقطة عند المشاركة + ٢٠ عن كل صديق ينضم
             </p>
           </div>
-          <ArrowRight size={16} className="rotate-180 opacity-80" />
+          <ArrowRight size={16} className="rotate-180 opacity-90" />
         </motion.button>
       </div>
 

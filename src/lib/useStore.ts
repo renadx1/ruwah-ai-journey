@@ -52,9 +52,9 @@ export function useReferral() {
     () => localStorage.getItem('ruwat_referral_share_bonus') === '1'
   );
 
-  const link = typeof window !== 'undefined'
-    ? `${window.location.origin}/?ref=${code}`
-    : `?ref=${code}`;
+  // Branded share link — never expose the underlying preview/host domain in shares
+  const SHARE_BASE = 'https://ruwah.app';
+  const link = `${SHARE_BASE}/?ref=${code}`;
 
   const recordShare = useCallback(() => {
     setShareCount(prev => {
