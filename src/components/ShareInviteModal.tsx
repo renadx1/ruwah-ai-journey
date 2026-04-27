@@ -155,21 +155,7 @@ export default function ShareInviteModal({ open, onClose }: Props) {
               </button>
             </div>
 
-            {/* Stats */}
-            <div className="px-5 mt-4 grid grid-cols-3 gap-3">
-              <div className="bg-card border border-border rounded-2xl p-3 text-center">
-                <p className="font-heading font-bold text-heritage-brown">{shareCount}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">مرات المشاركة</p>
-              </div>
-              <div className="bg-card border border-border rounded-2xl p-3 text-center">
-                <p className="font-heading font-bold text-heritage-brown">{referralCount}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">إجمالي الإحالات</p>
-              </div>
-              <div className="bg-card border border-border rounded-2xl p-3 text-center">
-                <p className="font-heading font-bold text-heritage-brown">{points}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">نقاطك</p>
-              </div>
-            </div>
+            {/* Stats removed — points now reflect directly in the profile page */}
 
             {/* Bonus banner */}
             {justClaimed && (
