@@ -31,8 +31,10 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
   const [highContrast, setHighContrast] = useState(() => localStorage.getItem('a11y_contrast') === '1');
   const [voiceControl, setVoiceControl] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isAudioLoading, setIsAudioLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
+  const ttsAbortRef = useRef<AbortController | null>(null);
 
   const largeText = textScale > 1.001;
 
