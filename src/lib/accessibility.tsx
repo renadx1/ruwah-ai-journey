@@ -69,7 +69,12 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
       URL.revokeObjectURL(audioUrlRef.current);
       audioUrlRef.current = null;
     }
+    if (ttsAbortRef.current) {
+      ttsAbortRef.current.abort();
+      ttsAbortRef.current = null;
+    }
     setIsSpeaking(false);
+    setIsAudioLoading(false);
   }, []);
 
   const speakBrowserFallback = useCallback((cleaned: string) => {
@@ -77,11 +82,12 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(cleaned);
     utter.lang = 'ar-SA';
-    utter.rate = 0.95;
+    utter.rate = 1.0;
     utter.onend = () => setIsSpeaking(false);
     utter.onerror = () => setIsSpeaking(false);
     window.speechSynthesis.speak(utter);
     setIsSpeaking(true);
+    setIsAudioLoading(false);
   }, []);
 
   const speak = useCallback(async (text: string) => {
@@ -100,9 +106,29 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
       URL.revokeObjectURL(audioUrlRef.current);
       audioUrlRef.current = null;
     }
+    if (ttsAbortRef.current) {
+      ttsAbortRef.current.abort();
+      ttsAbortRef.current = null;
+    }
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 
+    // INSTANT FEEDBACK: start browser TTS immediately so user hears voice without delay
     setIsSpeaking(true);
+    setIsAudioLoading(true);
+    let browserStarted = false;
+    if ('speechSynthesis' in window) {
+      const utter = new SpeechSynthesisUtterance(cleaned);
+      utter.lang = 'ar-SA';
+      utter.rate = 1.0;
+      utter.onend = () => setIsSpeaking(false);
+      utter.onerror = () => {};
+      window.speechSynthesis.speak(utter);
+      browserStarted = true;
+    }
+
+    // In parallel try Elm TTS; if it returns quickly we swap to higher-quality voice
+    const controller = new AbortController();
+    ttsAbortRef.current = controller;
     try {
       const resp = await fetch(TTS_URL, {
         method: 'POST',
@@ -111,13 +137,20 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({ text: cleaned }),
+        signal: controller.signal,
       });
       if (!resp.ok) throw new Error(`TTS HTTP ${resp.status}`);
       const blob = await resp.blob();
       if (!blob.type.startsWith('audio')) throw new Error('Invalid audio response');
+
+      // Swap browser TTS for the high-quality audio
+      if (browserStarted && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
       const url = URL.createObjectURL(blob);
       audioUrlRef.current = url;
       const audio = new Audio(url);
+      audio.preload = 'auto';
       audioRef.current = audio;
       audio.onended = () => {
         setIsSpeaking(false);
@@ -128,12 +161,19 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
       };
       audio.onerror = () => {
         setIsSpeaking(false);
-        speakBrowserFallback(cleaned);
       };
+      setIsAudioLoading(false);
       await audio.play();
     } catch (err) {
-      console.warn('Elm TTS failed, falling back to browser:', err);
-      speakBrowserFallback(cleaned);
+      // If browser TTS already running, just let it finish
+      if (!browserStarted) {
+        speakBrowserFallback(cleaned);
+      } else {
+        setIsAudioLoading(false);
+      }
+      if ((err as any)?.name !== 'AbortError') {
+        console.warn('Elm TTS failed, using browser fallback:', err);
+      }
     }
   }, [speakBrowserFallback]);
 
