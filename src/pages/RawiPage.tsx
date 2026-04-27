@@ -229,17 +229,33 @@ export default function RawiPage() {
 
   const handleSend = async (forced?: string) => {
     const text = (forced ?? input).trim();
-    const hasFiles = attachments.length > 0;
+    const filesToSend = attachments;
+    const hasFiles = filesToSend.length > 0;
     if ((!text && !hasFiles) || isTyping) return;
-    const fileNote = hasFiles ? `\n\n📎 ${attachments.map((f) => f.name).join('، ')}` : '';
+
+    // Split: images go to vision, other files (pdf/doc) shown as note for now
+    const imageFiles = filesToSend.filter((f) => f.type.startsWith('image/'));
+    const otherFiles = filesToSend.filter((f) => !f.type.startsWith('image/'));
+
+    let imageDataUrls: string[] = [];
+    if (imageFiles.length > 0) {
+      try {
+        imageDataUrls = await Promise.all(imageFiles.map(fileToDataUrl));
+      } catch {
+        imageDataUrls = [];
+      }
+    }
+
+    const fileNote = otherFiles.length > 0
+      ? `\n\n📎 ${otherFiles.map((f) => f.name).join('، ')}`
+      : '';
+
     const userMsg: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: (text || 'أرسلت ملف للتحليل') + fileNote,
+      content: (text || (imageDataUrls.length > 0 ? 'تعرّف على هذه الصورة' : 'أرسلت ملف للتحليل')) + fileNote,
+      images: imageDataUrls.length > 0 ? imageDataUrls : undefined,
     };
-    const historyForApi = [...messages, userMsg]
-      .filter((m) => m.id !== '0')
-      .map((m) => ({ role: m.role, content: m.content }));
 
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
@@ -250,23 +266,39 @@ export default function RawiPage() {
     let acc = '';
     let firstChunk = true;
 
+    const onDelta = (chunk: string) => {
+      acc += chunk;
+      if (firstChunk) {
+        firstChunk = false;
+        setIsTyping(false);
+        setMessages((prev) => [...prev, { id: assistantId, role: 'assistant', content: acc }]);
+      } else {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === assistantId ? { ...m, content: acc } : m))
+        );
+      }
+    };
+
     try {
-      await streamElmChat({
-        messages: historyForApi,
-        place: placeName || undefined,
-        onDelta: (chunk) => {
-          acc += chunk;
-          if (firstChunk) {
-            firstChunk = false;
-            setIsTyping(false);
-            setMessages((prev) => [...prev, { id: assistantId, role: 'assistant', content: acc }]);
-          } else {
-            setMessages((prev) =>
-              prev.map((m) => (m.id === assistantId ? { ...m, content: acc } : m))
-            );
-          }
-        },
-      });
+      if (imageDataUrls.length > 0) {
+        // Vision flow — uses Lovable AI Gateway (Gemini) for heritage element recognition
+        await streamVision({
+          images: imageDataUrls,
+          prompt: text || undefined,
+          place: placeName || undefined,
+          onDelta,
+        });
+      } else {
+        const historyForApi = [...messages, userMsg]
+          .filter((m) => m.id !== '0')
+          .map((m) => ({ role: m.role, content: m.content }));
+        await streamElmChat({
+          messages: historyForApi,
+          place: placeName || undefined,
+          onDelta,
+        });
+      }
+
       if (firstChunk) {
         setIsTyping(false);
         setMessages((prev) => [
