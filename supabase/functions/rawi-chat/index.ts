@@ -1,7 +1,7 @@
 import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.0/cors";
 
-const ELM_BASE_URL = "https://elmodels.ngrok.app/v1";
-const MODEL_NAME = "nuha-2.0";
+const AI_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const MODEL_NAME = "google/gemini-2.5-flash";
 
 const SYSTEM_PROMPT = `أنت "الراوي"، شاب سعودي من الرياض، تسولف مع ربعك سواليف عادية يوم بيوم. مو روبوت ولا مرشد سياحي، بس واحد من أهل الديرة قاعد يدردش.
 
@@ -127,10 +127,10 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const ELM_API_KEY = Deno.env.get("ELM_API_KEY");
-    if (!ELM_API_KEY) {
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
       return new Response(
-        JSON.stringify({ error: "ELM_API_KEY is not configured" }),
+        JSON.stringify({ error: "LOVABLE_API_KEY is not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -147,10 +147,10 @@ Deno.serve(async (req) => {
       ? `${SYSTEM_PROMPT}\n\nالمستخدم يستفسر حالياً عن: ${place}`
       : SYSTEM_PROMPT;
 
-    const response = await fetch(`${ELM_BASE_URL}/chat/completions`, {
+    const response = await fetch(AI_GATEWAY_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${ELM_API_KEY}`,
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -162,9 +162,21 @@ Deno.serve(async (req) => {
 
     if (!response.ok) {
       const t = await response.text();
-      console.error("Elm API error:", response.status, t);
+      console.error("AI Gateway error:", response.status, t);
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "تم تجاوز حد الاستخدام، حاول بعد شوي." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "الرصيد انتهى، يرجى إضافة رصيد لـ Lovable AI." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       return new Response(
-        JSON.stringify({ error: `Elm API error [${response.status}]: ${t.slice(0, 300)}` }),
+        JSON.stringify({ error: `AI Gateway error [${response.status}]: ${t.slice(0, 300)}` }),
         { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
