@@ -1,4 +1,4 @@
-import { useState } from 'react';
+// Support page
 import { ArrowRight, Mail, MessageCircle, Phone, HelpCircle, Headset } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
