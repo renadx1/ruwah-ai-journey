@@ -381,21 +381,35 @@ export default function RawiPage() {
       return;
     }
     if (isRecording) {
-      recognitionRef.current?.stop();
+      try { recognitionRef.current?.stop(); } catch {}
       setIsRecording(false);
       return;
     }
     const rec = new SR();
     rec.lang = 'ar-SA';
-    rec.interimResults = false;
+    rec.interimResults = true;
     rec.continuous = false;
+    let finalTranscript = '';
     rec.onresult = (e: any) => {
-      const transcript = e.results[0][0].transcript;
-      setInput((prev) => (prev ? prev + ' ' + transcript : transcript));
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) finalTranscript += t;
+        else interim += t;
+      }
+      // Live update the input so the user sees the transcript as they speak
+      setInput((finalTranscript + interim).trim());
     };
-    rec.onend = () => setIsRecording(false);
+    rec.onend = () => {
+      setIsRecording(false);
+      const text = finalTranscript.trim();
+      if (text) {
+        // Auto-send the recognized text after a tiny tick so state has time to settle
+        setTimeout(() => handleSend(text), 50);
+      }
+    };
     rec.onerror = () => setIsRecording(false);
-    rec.start();
+    try { rec.start(); } catch {}
     recognitionRef.current = rec;
     setIsRecording(true);
   };
