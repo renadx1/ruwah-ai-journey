@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowRight, Mail, MessageCircle, Phone, HelpCircle, Headset, Star, Gift } from 'lucide-react';
+// Support page
+import { ArrowRight, Mail, MessageCircle, Phone, HelpCircle, Headset } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { AccessibilityButton } from '@/components/AccessibilityFab';
@@ -13,16 +13,12 @@ const channels = [
 const faqs = [
   { q: 'كيف أغيّر اسمي؟', a: 'من صفحة "حسابي" في الأسفل، أدخل اسمًا جديدًا واحفظه.' },
   {
-    q: 'كيف أكسب نقاطًا؟',
-    a: 'تتراكم نقاطك عبر تفاعلك اليومي مع التطبيق:\n• محادثة الراوي وطرح الأسئلة\n• استكشاف المعالم والمواقع على الخريطة\n• مشاركة التطبيق مع أصدقائك (٣٠ نقطة)\n• انضمام صديقك عبر دعوتك (٢٠ نقطة إضافية)',
-  },
-  {
-    q: 'وش أستفيد من النقاط؟',
-    a: 'كل ما وصلت لـ ١٠٠ نقطة، تنفتح لك مكافأة من اختيارك:\n• كود خصم من المتاجر والمحلات المتعاونة معنا\n• تذكرة دخول مجانية لأحد المعالم أو الأماكن السياحية الشريكة\nكل ما زادت نقاطك، زادت مكافآتك — تفاعلك معنا له قيمة حقيقية 🎁',
+    q: 'النقاط: كيف أكسبها وش أستفيد منها؟',
+    a: 'تتراكم نقاطك عبر تفاعلك اليومي مع التطبيق:\n• محادثة الراوي وطرح الأسئلة\n• استكشاف المعالم والمواقع على الخريطة\n• مشاركة التطبيق مع أصدقائك (٣٠ نقطة)\n• انضمام صديقك عبر دعوتك (٢٠ نقطة إضافية)\n\nكل ما وصلت لـ ١٠٠ نقطة، تنفتح لك مكافأة من اختيارك:\n• كود خصم من المتاجر والمحلات المتعاونة معنا\n• تذكرة دخول مجانية لأحد المعالم أو الأماكن السياحية الشريكة\n\nكل ما زادت نقاطك، زادت مكافآتك.',
   },
   {
     q: 'كيف أرفع متجري الثقافي على الخريطة؟',
-    a: 'عن طريق التسجيل في خانة "رفع المتاجر" في صفحة الخريطة، ثم تعبئة المعلومات الكاملة:\n• اسم المكان والحي\n• نبذة تعريفية عن الخدمات\n• رسوم الدخول (إن وُجدت)\n• هل يدعم الاحتياجات الخاصة\n• إرسال الطلب',
+    a: 'عن طريق التسجيل في خانة "رفع المتاجر" في صفحة الخريطة، ثم تعبئة المعلومات الكاملة:\n• اسم المكان والحي\n• نبذة تعريفية عن الخدمات\n• رابط الموقع على قوقل ماب\n• رسوم الدخول (إن وُجدت)\n• هل يدعم الاحتياجات الخاصة\n• إرسال الطلب',
   },
 ];
 
@@ -50,35 +46,6 @@ export default function SupportPage() {
             <h1 className="font-heading text-2xl font-bold text-heritage-brown">الدعم</h1>
             <p className="text-muted-foreground text-xs mt-0.5">نحن هنا لمساعدتك في أي وقت</p>
           </div>
-        </motion.div>
-      </div>
-
-      {/* Rewards explainer */}
-      <div className="px-5 mb-3">
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-secondary to-card border border-border rounded-2xl p-4 text-right shadow-sm"
-        >
-          <div className="flex items-center gap-2 mb-2 justify-end">
-            <h3 className="font-heading font-bold text-sm text-heritage-brown">نظام النقاط والمكافآت</h3>
-            <Gift size={18} className="text-heritage-brown" strokeWidth={1.7} />
-          </div>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            اجمع نقاطك من تفاعلك مع التطبيق، ومن مشاركة رواة مع أصدقائك. كل ما وصلت لـ
-            <span className="font-bold text-heritage-brown"> ١٠٠ نقطة </span>
-            تختار مكافأتك:
-          </p>
-          <ul className="mt-2 space-y-1.5 text-xs text-foreground/80">
-            <li className="flex items-center gap-2 justify-end">
-              <span>كود خصم من المتاجر والمحلات المتعاونة معنا</span>
-              <Star size={12} className="text-heritage-brown flex-shrink-0" />
-            </li>
-            <li className="flex items-center gap-2 justify-end">
-              <span>تذكرة دخول مجانية لأحد المعالم الشريكة</span>
-              <Star size={12} className="text-heritage-brown flex-shrink-0" />
-            </li>
-          </ul>
         </motion.div>
       </div>
 

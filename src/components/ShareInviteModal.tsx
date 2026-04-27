@@ -11,9 +11,8 @@ interface Props {
 const SHARE_MESSAGE = 'تعال جرّب تطبيق "رواة" واكتشف معي تراث المملكة بطريقة ممتعة وذكية! استخدم رمز دعوتي:';
 
 export default function ShareInviteModal({ open, onClose }: Props) {
-  const { code, link, shareCount, referralCount, hasClaimedShareBonus, recordShare, claimShareBonus } =
-    useReferral();
-  const { points, addPoints } = usePoints();
+  const { code, link, hasClaimedShareBonus, recordShare, claimShareBonus } = useReferral();
+  const { addPoints } = usePoints();
   const [copied, setCopied] = useState(false);
   const [justClaimed, setJustClaimed] = useState(false);
 
@@ -100,7 +99,7 @@ export default function ShareInviteModal({ open, onClose }: Props) {
             exit={{ y: '100%' }}
             transition={{ type: 'spring', stiffness: 280, damping: 30 }}
             dir="rtl"
-            className="fixed inset-x-0 bottom-0 z-50 max-h-[92vh] overflow-y-auto bg-card rounded-t-3xl shadow-2xl border-t border-border"
+            className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto bg-card rounded-t-3xl shadow-2xl border-t border-border mx-auto w-full max-w-[440px]"
           >
             {/* Header */}
             <div className="sticky top-0 bg-card/95 backdrop-blur px-5 pt-3 pb-3 border-b border-border z-10">
@@ -156,21 +155,7 @@ export default function ShareInviteModal({ open, onClose }: Props) {
               </button>
             </div>
 
-            {/* Stats */}
-            <div className="px-5 mt-4 grid grid-cols-3 gap-3">
-              <div className="bg-card border border-border rounded-2xl p-3 text-center">
-                <p className="font-heading font-bold text-heritage-brown">{shareCount}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">مرات المشاركة</p>
-              </div>
-              <div className="bg-card border border-border rounded-2xl p-3 text-center">
-                <p className="font-heading font-bold text-heritage-brown">{referralCount}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">إجمالي الإحالات</p>
-              </div>
-              <div className="bg-card border border-border rounded-2xl p-3 text-center">
-                <p className="font-heading font-bold text-heritage-brown">{points}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">نقاطك</p>
-              </div>
-            </div>
+            {/* Stats removed — points now reflect directly in the profile page */}
 
             {/* Bonus banner */}
             {justClaimed && (

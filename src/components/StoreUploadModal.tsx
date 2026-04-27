@@ -19,6 +19,7 @@ export default function StoreUploadModal({
     parking: false,
     restroom: false,
     photos: '',
+    mapUrl: '',
   });
 
   const handleSubmit = () => {
@@ -35,6 +36,7 @@ export default function StoreUploadModal({
         parking: false,
         restroom: false,
         photos: '',
+        mapUrl: '',
       });
       onClose();
     }, 1800);
@@ -104,6 +106,15 @@ export default function StoreUploadModal({
                     value={form.photos}
                     onChange={(e) => setForm({ ...form, photos: e.target.value })}
                     placeholder="https://..."
+                    className="ruwat-input"
+                    dir="ltr"
+                  />
+                </Field>
+                <Field label="رابط الموقع على قوقل ماب">
+                  <input
+                    value={form.mapUrl}
+                    onChange={(e) => setForm({ ...form, mapUrl: e.target.value })}
+                    placeholder="https://maps.google.com/..."
                     className="ruwat-input"
                     dir="ltr"
                   />
