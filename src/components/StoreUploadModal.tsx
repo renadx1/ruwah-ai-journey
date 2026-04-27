@@ -110,6 +110,15 @@ export default function StoreUploadModal({
                     dir="ltr"
                   />
                 </Field>
+                <Field label="رابط الموقع على قوقل ماب">
+                  <input
+                    value={form.mapUrl}
+                    onChange={(e) => setForm({ ...form, mapUrl: e.target.value })}
+                    placeholder="https://maps.google.com/..."
+                    className="ruwat-input"
+                    dir="ltr"
+                  />
+                </Field>
                 <Field label="رسوم الدخول">
                   <input
                     value={form.fee}
