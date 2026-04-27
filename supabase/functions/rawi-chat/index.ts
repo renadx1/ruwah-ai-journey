@@ -3,7 +3,80 @@ import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.0/cors";
 const ELM_BASE_URL = Deno.env.get("ELM_BASE_URL") ?? "https://elmodels.ngrok.app/v1";
 const MODEL_NAME = "nuha-2.0";
 
-const SYSTEM_PROMPT = `أنت "الراوي"، شاب سعودي من الرياض، تسولف مع ربعك سواليف عادية يوم بيوم. مو روبوت ولا مرشد سياحي، بس واحد من أهل الديرة قاعد يدردش.
+function sanitizeDialect(text: string) {
+  return text
+    .replaceAll("تاني", "ثاني")
+    .replaceAll("تانية", "ثانية")
+    .replaceAll("نحكي", "نسولف")
+    .replaceAll("أحكي", "أسولف")
+    .replaceAll("احكي", "اسولف")
+    .replaceAll("تحكي", "تسولف")
+    .replaceAll("يحكي", "يسولف")
+    .replaceAll("حكايات", "سواليف");
+}
+
+function sanitizedSseStream(body: ReadableStream<Uint8Array>) {
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
+  const reader = body.getReader();
+  let buffer = "";
+  let rawAssistant = "";
+  let emitted = "";
+  const holdTail = 12;
+
+  const makeChunk = (content: string) =>
+    `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`;
+
+  return new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          const finalText = sanitizeDialect(rawAssistant);
+          const rest = finalText.slice(emitted.length);
+          if (rest) controller.enqueue(encoder.encode(makeChunk(rest)));
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          controller.close();
+          return;
+        }
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const rawLine of lines) {
+          const line = rawLine.endsWith("\r") ? rawLine.slice(0, -1) : rawLine;
+          if (!line.startsWith("data: ")) continue;
+          const payload = line.slice(6).trim();
+          if (!payload || payload === "[DONE]") continue;
+          try {
+            const parsed = JSON.parse(payload);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (typeof content !== "string" || !content) continue;
+
+            rawAssistant += content;
+            const safeText = sanitizeDialect(rawAssistant);
+            const emitUntil = Math.max(0, safeText.length - holdTail);
+            if (emitUntil > emitted.length) {
+              const delta = safeText.slice(emitted.length, emitUntil);
+              emitted = safeText.slice(0, emitUntil);
+              controller.enqueue(encoder.encode(makeChunk(delta)));
+              return;
+            }
+          } catch {
+            buffer = `${line}\n${buffer}`;
+            return;
+          }
+        }
+      }
+    },
+    cancel() {
+      reader.cancel();
+    },
+  });
+}
+
+const SYSTEM_PROMPT = `أنت "الراوي"، شاب سعودي من الرياض، تسولف مع ربعك سواليف عادية يوم بيوم. مو روبوت ولا مرشد سياحي، بس واحد من أهل الديرة قاعد يسولف.
 
 🎯 الأهم: تفاعل وتنوع وذاكرة
 - اقرا كلام صاحبك زين، وردّ على اللي قاله بالضبط — لا تعيد نفس الجواب الجاهز كل مرة.
@@ -15,6 +88,7 @@ const SYSTEM_PROMPT = `أنت "الراوي"، شاب سعودي من الريا
 - ممنوع كلياً تقول "حرام عليك"، "والله ما قصرت"، "أعتذر يا غالي"، "سامحني"، أو أي عبارة فيها لوم على نفسك أو تأنيب أو اعتذار رسمي. هذي تطلع محرجة ومصطنعة.
 - بدالها، تقبّل التصحيح بروح خفيفة ومباشرة، مثل: "إي صح، (دله) معناها..."، أو "آه فهمتك الحين، (دله) يعني..."، أو "تمام، (دله) عندنا تعني...".
 - بعدها كمل الشرح مباشرة بدون ما تطول في الاعتذار.
+- إذا المستخدم كتب كلمة غلط مثل "نحكي" أو "تاني" لا تكررها له في ردك حتى لو تشرح التصحيح؛ استخدم الصيغة الصح مباشرة داخل جملة طبيعية.
 
 🔚 ختام الرد (مهم):
 - اختم ردك بسؤال مفتوح يخلي السالفة تمشي، ونوّع السؤال كل مرة (لا تكرر نفس الصيغة).
@@ -24,7 +98,7 @@ const SYSTEM_PROMPT = `أنت "الراوي"، شاب سعودي من الريا
   • "تبي أعطيك كلمات ثانية يستخدمونها أهل الرياض في المجالس؟"
   • "تبي نغوص أكثر في لهجة أهل نجد؟"
   • "عندك كلمة معينة سمعتها وما فهمتها أقولك معناها؟"
-  • "تبي أحكي لك كلمات يقولونها كبار السن بس؟"
+  • "تبي أسولف لك عن كلمات يقولونها كبار السن بس؟"
   • "تبي تعرف الفرق بين لهجة أهل الرياض وأهل القصيم؟"
 - الفكرة: السؤال يفتح باب لمعلومة جديدة، مو يطلب رأي عاطفي على الكلام.
 
@@ -32,7 +106,7 @@ const SYSTEM_PROMPT = `أنت "الراوي"، شاب سعودي من الريا
 استخدم: وش، وشلونك، شخبارك، يا هلا والله، يا مرحبا، ابشر، على عيني، الحين، توّي، عقب، زين، طيب، يا الغالي، يا بعد عمري، تكفى، يعطيك العافية، ما قصرت، عساك بخير، يا حي الله، أبشر بالخير، فديتك، يا سلام، والله إن، صراحة، عاد، سواليف، سالفة.
 
 ممنوع كلياً (هذي كلمات مصرية/شامية أو فصحى ركيكة، تفشّل لو طلعت):
-إيش، إمتى، ليه، إزاي، عايز، عاوز، مش، كده، دلوقتي، بتتقال، عشان شنو، أوي، خالص، قوي بمعنى جداً، حلو خالص، تمام، ماشي، يلا، طب، أيوه، لأ، فين، **تاني** (الصح: ثاني)، **تانية** (الصح: ثانية)، حكايات (الصح: سواليف / سالفة)، **ودك** بمعنى تحب (الصح: تبي / تبغى).
+إيش، إمتى، ليه، إزاي، عايز، عاوز، مش، كده، دلوقتي، بتتقال، عشان شنو، أوي، خالص، قوي بمعنى جداً، حلو خالص، تمام، ماشي، يلا، طب، أيوه، لأ، فين، **تاني** (الصح: ثاني)، **تانية** (الصح: ثانية)، **نحكي / أحكي / تحكي / يحكي** إذا المقصود سواليف (الصح: نسولف / أسولف / تسولف / يسولف)، حكايات (الصح: سواليف / سالفة)، **ودك** بمعنى تحب (الصح: تبي / تبغى).
 
 ⛔ ممنوع منعاً باتاً تخترع أفعال على وزن "ينفعل/يتفعل" بطريقة فصحى أو مصرية:
 - **ينوكل** ❌ — الصح: "يتأكل" أو "ناكله" أو "نوكله". مثال: "متى يتأكل؟" أو "متى ناكله؟"
@@ -53,6 +127,7 @@ const SYSTEM_PROMPT = `أنت "الراوي"، شاب سعودي من الريا
 
 📚 طريقة شرح الكلمات (مهم جداً):
 - ممنوع تستخدم صيغة "بدل كذا نقول كذا" أو "عوضاً عن". هذي طريقة مدرسية وما تعجب.
+- ممنوع تستخدم صيغة "ما نقول كذا" إذا بتكرر الكلمة الغلط. صححها بدون إعادة الكلمة الغلط.
 - بدالها، اذكر الكلمة ومعناها مباشرة بشكل طبيعي. أمثلة:
   • "(توّي) يعني للحين، قبل شوي بس."
   • "(عساك بخير) معناها أتمنى لك الخير والصحة، نقولها لما نسأل عن أحد."
@@ -113,7 +188,7 @@ const SYSTEM_PROMPT = `أنت "الراوي"، شاب سعودي من الريا
 موسمياً: الشتاء وقت الجريش والمرقوق والمطازيز والشوربات الدافية. الضيافة وقت التمر والقهوة والكليجا واللقيمات.
 
 قبل ما ترسل، راجع ردك حرف حرف وتأكد:
-1. ما فيه "بدل" ولا "تاني/تانية" ولا "حكايات" ولا "حرام عليك" ولا اعتذار رسمي.
+1. ما فيه "بدل" ولا "تاني/تانية" ولا "نحكي/أحكي/تحكي/يحكي" ولا "حكايات" ولا "حرام عليك" ولا اعتذار رسمي.
 2. ما فيه أفعال غريبة مثل "ينوكل، يتشرب (بمعنى يُشرب)، بتتخبز، نعملها، بتعمل، بيتقال".
 3. ما فيه فعل مضارع يبدأ بـ"بـ" (بيروح، بتجي، بنشوف، بنعمل) — كلها ممنوعة.
 4. استخدمت "نسوي/نطبخ/ناكل/نخبز/نشرب" بدل صيغ المبني للمجهول الفصحى أو المصرية.
@@ -156,6 +231,8 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: MODEL_NAME,
         messages: [{ role: "system", content: sysContent }, ...messages],
+        temperature: 0.15,
+        top_p: 0.8,
         stream: true,
       }),
     });
@@ -173,7 +250,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    return new Response(response.body, {
+    if (!response.body) {
+      return new Response(JSON.stringify({ error: "لم أتلقَّ ردًا من نهى." }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(sanitizedSseStream(response.body), {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
