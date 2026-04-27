@@ -99,7 +99,7 @@ export default function ShareInviteModal({ open, onClose }: Props) {
             exit={{ y: '100%' }}
             transition={{ type: 'spring', stiffness: 280, damping: 30 }}
             dir="rtl"
-            className="fixed inset-x-0 bottom-0 z-50 max-h-[92vh] overflow-y-auto bg-card rounded-t-3xl shadow-2xl border-t border-border"
+            className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto bg-card rounded-t-3xl shadow-2xl border-t border-border mx-auto w-full max-w-[440px]"
           >
             {/* Header */}
             <div className="sticky top-0 bg-card/95 backdrop-blur px-5 pt-3 pb-3 border-b border-border z-10">
