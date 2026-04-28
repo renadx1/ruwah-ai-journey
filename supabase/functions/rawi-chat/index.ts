@@ -97,13 +97,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    const lastUserMessage = [...messages].reverse().find((m) => m?.role === "user")?.content ?? "";
-    if (isLocalWordsRequest(lastUserMessage)) {
-      return new Response(curatedNajdiWordsResponse(messages), {
-        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
-      });
-    }
-
     const sysContent = place
       ? `${SYSTEM_PROMPT}\n\nالمستخدم يستفسر حالياً عن: ${place}`
       : SYSTEM_PROMPT;
