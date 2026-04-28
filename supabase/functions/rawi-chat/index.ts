@@ -108,9 +108,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    const finalMessages = place
-      ? [{ role: "system", content: `المستخدم يستفسر حالياً عن: ${place}` }, ...messages]
-      : messages;
+    const sysContent = place
+      ? `${SYSTEM_PROMPT}\n\nالمستخدم يستفسر حالياً عن: ${place}`
+      : SYSTEM_PROMPT;
+    const finalMessages = [{ role: "system", content: sysContent }, ...messages];
 
     const response = await fetch(`${ELM_BASE_URL}/chat/completions`, {
       method: "POST",
