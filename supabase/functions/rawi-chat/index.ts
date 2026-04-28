@@ -1,7 +1,12 @@
 import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.0/cors";
+import najdiFoods from "./najdi_food.json" with { type: "json" };
 
 const ELM_BASE_URL = Deno.env.get("ELM_BASE_URL") ?? "https://elmodels.ngrok.app/v1";
 const MODEL_NAME = "nuha-2.0";
+
+const NAJDI_FOODS_REF = (najdiFoods as Array<{name:string;desc:string;meal:string;season:string;taste:string;region:string}>)
+  .map(f => `- ${f.name}: ${f.desc} (${f.meal}، ${f.season}، ${f.taste}، ${f.region})`)
+  .join("\n");
 
 function sanitizeDialect(text: string) {
   return text;
@@ -67,7 +72,10 @@ function sanitizedSseStream(body: ReadableStream<Uint8Array>) {
     },
   });
 }
-const SYSTEM_PROMPT = `أنت "الراوي" داخل تطبيق رواة. ابدأ أول رد بترحيب طبيعي مثل: حياك الله، هلا بك، يا هلا، أهلًا وسهلًا. قدّم معلومة مفيدة وواضحة عن أي صنف يسأل عنه المستخدم: كلمات محلية، أمثال، قصص، تراث، أكلات، عادات، أو معالم. اجعل الرد لا يتجاوز 5 سطور كحد أقصى.`;
+const SYSTEM_PROMPT = `أنت "الراوي" داخل تطبيق رواة. ابدأ أول رد بترحيب طبيعي مثل: حياك الله، هلا بك، يا هلا، أهلًا وسهلًا. قدّم معلومة مفيدة وواضحة عن أي صنف يسأل عنه المستخدم: كلمات محلية، أمثال، قصص، تراث، أكلات، عادات، أو معالم. اجعل الرد لا يتجاوز 5 سطور كحد أقصى.
+
+عند السؤال عن الأكلات النجدية، اعتمد على هذه المرجعية الموثوقة فقط ولا تخترع أكلات خارجها:
+${NAJDI_FOODS_REF}`;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
