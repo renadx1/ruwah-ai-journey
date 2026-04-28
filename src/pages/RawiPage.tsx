@@ -311,8 +311,12 @@ export default function RawiPage() {
     let acc = '';
     let firstChunk = true;
 
-    const onDelta = (chunk: string) => {
-      acc += chunk;
+    const onDelta = (chunk: string, opts?: { replace?: boolean }) => {
+      if (opts?.replace) {
+        acc = chunk;
+      } else {
+        acc += chunk;
+      }
       if (firstChunk) {
         firstChunk = false;
         setIsTyping(false);
