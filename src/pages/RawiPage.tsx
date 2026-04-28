@@ -30,6 +30,17 @@ const categoryPrompts: Record<string, string> = {
   culture: 'قل لي عن العادات والتراث في الرياض',
 };
 
+const categoryIntros: Record<string, string> = {
+  synonyms:
+    'أهلًا بك، سأعرّفك على الكلمات والمصطلحات المحلية المتداولة في هذه المنطقة، مع شرح معناها وطريقة استخدامها في الحياة اليومية.',
+  proverbs:
+    'رائع، دعنا نستكشف أشهر الأمثال الشعبية في هذه المنطقة، مع معانيها والمواقف الي تُقال فيها.',
+  stories:
+    'جميل، بروي لك قصصًا تراثية وحكايات تناقلها أهل المنطقة جيلًا بعد جيل، لتعيش روح المكان وتاريخه.',
+  culture:
+    'مرحبًا، سنكتشف معًا العادات والتقاليد والفنون والموروث الثقافي الي يميز هذه المنطقة ويعكس هويتها الأصيلة.',
+};
+
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rawi-chat`;
 const VISION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rawi-vision`;
 
@@ -138,8 +149,8 @@ const makeWelcome = (placeName: string | null): Message => ({
   id: '0',
   role: 'assistant',
   content: placeName
-    ? `يا هلا والله، أنا الراوي. واضح إنك مهتم بـ ${placeName} — اسألني عنه ونسولف.`
-    : 'يا هلا والله، أنا الراوي. اختر موضوع أو اسألني مباشرة ونسولف.',
+    ? `أهلًا وسهلًا، أنا الراوي، مساعدك الذكي لاستكشاف ثقافة ${placeName}، اختر موضوعًا أو اسألني مباشرة.`
+    : 'أهلًا وسهلًا، أنا الراوي، مساعدك الذكي لاستكشاف ثقافة المنطقة، اختر موضوعًا أو اسألني مباشرة.',
 });
 
 function loadConversations(): Conversation[] {
@@ -541,7 +552,16 @@ export default function RawiPage() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 + i * 0.05 }}
-                onClick={() => handleSend(categoryPrompts[cat.id])}
+                onClick={() => {
+                  const intro = categoryIntros[cat.id];
+                  if (intro) {
+                    setMessages((prev) => [
+                      ...prev,
+                      { id: `intro-${cat.id}-${Date.now()}`, role: 'assistant', content: intro },
+                    ]);
+                  }
+                  handleSend(categoryPrompts[cat.id]);
+                }}
                 className="bg-card border border-border rounded-2xl p-3 text-right active:scale-[0.97] transition-transform shadow-sm flex items-center gap-2"
               >
                 <span className="flex-shrink-0 w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
