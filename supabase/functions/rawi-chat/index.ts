@@ -15,6 +15,65 @@ function sanitizeDialect(text: string) {
     .replaceAll("حكايات", "سواليف");
 }
 
+const VERIFIED_NAJDI_WORD_SETS = [
+  [
+    ["وشوله", "لماذا أو لأي سبب"],
+    ["مير", "لكن"],
+    ["أبشر", "حاضر وطلبك مجاب"],
+    ["تسان", "إذا"],
+  ],
+  [
+    ["وشلون", "كيف"],
+    ["علومك", "أخبارك وأحوالك"],
+    ["توه", "قبل قليل"],
+    ["اركد", "اهدأ أو تمهّل"],
+  ],
+  [
+    ["اقلط", "تفضّل بالدخول أو الجلوس"],
+    ["عقب", "بعد"],
+    ["واجد", "كثير"],
+    ["زين", "جيد أو طيب"],
+  ],
+  [
+    ["الحين", "الآن"],
+    ["تكفى", "أرجوك"],
+    ["يبي", "يريد"],
+    ["توّي", "قبل قليل عن نفسي"],
+  ],
+];
+
+function isLocalWordsRequest(text: string) {
+  return /(كلمات|مصطلحات|مرادفات|لهج|نجد|رياض|محلية)/i.test(text);
+}
+
+function curatedNajdiWordsResponse(messages: { role: string; content: string }[]) {
+  const previousAssistantText = messages
+    .filter((m) => m.role === "assistant")
+    .map((m) => m.content)
+    .join("\n");
+
+  const set = VERIFIED_NAJDI_WORD_SETS.find((items) =>
+    items.every(([word]) => !previousAssistantText.includes(word))
+  ) ?? VERIFIED_NAJDI_WORD_SETS[messages.length % VERIFIED_NAJDI_WORD_SETS.length];
+
+  return sanitizeDialect(`من الكلمات النجدية المعروفة في الرياض:\n${set
+    .map(([word, meaning]) => `(${word}) يعني ${meaning}.`)
+    .join("\n")}\nتبي أعطيك كلمات تنقال بالمجالس؟`);
+}
+
+function sseTextResponse(text: string) {
+  const encoder = new TextEncoder();
+  return new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(
+        encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\n`)
+      );
+      controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+      controller.close();
+    },
+  });
+}
+
 function sanitizedSseStream(body: ReadableStream<Uint8Array>) {
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
@@ -240,6 +299,13 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "messages must be an array" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    const lastUserMessage = [...messages].reverse().find((m) => m?.role === "user")?.content ?? "";
+    if (isLocalWordsRequest(lastUserMessage)) {
+      return new Response(curatedNajdiWordsResponse(messages), {
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+      });
     }
 
     const sysContent = place
