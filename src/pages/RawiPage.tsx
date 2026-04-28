@@ -128,7 +128,7 @@ async function streamVision({
   images: string[];
   prompt?: string;
   place?: string;
-  onDelta: (chunk: string) => void;
+  onDelta: (chunk: string, opts?: { replace?: boolean }) => void;
 }) {
   return streamSSE(VISION_URL, { images, prompt, place }, onDelta);
 }
