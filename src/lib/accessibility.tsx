@@ -57,7 +57,15 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  const cleanupAudioUrls = useCallback(() => {
+    for (const u of audioUrlsRef.current) {
+      try { URL.revokeObjectURL(u); } catch {}
+    }
+    audioUrlsRef.current = [];
+  }, []);
+
   const stopSpeaking = useCallback(() => {
+    playSeqRef.current += 1; // invalidate any in-flight playback loop
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
@@ -66,17 +74,14 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
       audioRef.current.src = '';
       audioRef.current = null;
     }
-    if (audioUrlRef.current) {
-      URL.revokeObjectURL(audioUrlRef.current);
-      audioUrlRef.current = null;
-    }
+    cleanupAudioUrls();
     if (ttsAbortRef.current) {
       ttsAbortRef.current.abort();
       ttsAbortRef.current = null;
     }
     setIsSpeaking(false);
     setIsAudioLoading(false);
-  }, []);
+  }, [cleanupAudioUrls]);
 
   const speakBrowserFallback = useCallback((cleaned: string) => {
     if (!('speechSynthesis' in window)) return;
@@ -91,6 +96,54 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
     setIsAudioLoading(false);
   }, []);
 
+  // Split text into short chunks (sentences / clauses) for streaming TTS
+  const chunkText = (text: string): string[] => {
+    // Split on sentence terminators while keeping reasonable chunk size
+    const parts = text
+      .split(/(?<=[\.\!\?\،\؛\:\n])\s+/u)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const chunks: string[] = [];
+    let buf = '';
+    const MAX = 180; // chars per chunk (~1 sentence)
+    for (const p of parts) {
+      if ((buf + ' ' + p).trim().length <= MAX) {
+        buf = (buf ? buf + ' ' : '') + p;
+      } else {
+        if (buf) chunks.push(buf);
+        if (p.length <= MAX) buf = p;
+        else {
+          // very long sentence: hard split
+          for (let i = 0; i < p.length; i += MAX) chunks.push(p.slice(i, i + MAX));
+          buf = '';
+        }
+      }
+    }
+    if (buf) chunks.push(buf);
+    return chunks;
+  };
+
+  const fetchChunkAudio = async (
+    chunk: string,
+    signal: AbortSignal
+  ): Promise<string> => {
+    const resp = await fetch(TTS_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify({ text: chunk }),
+      signal,
+    });
+    if (!resp.ok) throw new Error(`TTS HTTP ${resp.status}`);
+    const blob = await resp.blob();
+    if (!blob.type.startsWith('audio')) throw new Error('Invalid audio response');
+    const url = URL.createObjectURL(blob);
+    audioUrlsRef.current.push(url);
+    return url;
+  };
+
   const speak = useCallback(async (text: string) => {
     const cleaned = text
       .replace(/\*\*/g, '')
@@ -99,68 +152,59 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
     if (!cleaned) return;
 
     // Stop any current playback first
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-    if (audioUrlRef.current) {
-      URL.revokeObjectURL(audioUrlRef.current);
-      audioUrlRef.current = null;
-    }
-    if (ttsAbortRef.current) {
-      ttsAbortRef.current.abort();
-      ttsAbortRef.current = null;
-    }
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    stopSpeaking();
 
+    const mySeq = ++playSeqRef.current;
     setIsSpeaking(true);
     setIsAudioLoading(true);
 
-    // Fetch Elm TTS audio (the user wants the high-quality voice, not the OS voice)
     const controller = new AbortController();
     ttsAbortRef.current = controller;
-    try {
-      const resp = await fetch(TTS_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({ text: cleaned }),
-        signal: controller.signal,
-      });
-      if (!resp.ok) throw new Error(`TTS HTTP ${resp.status}`);
-      const blob = await resp.blob();
-      if (!blob.type.startsWith('audio')) throw new Error('Invalid audio response');
 
-      const url = URL.createObjectURL(blob);
-      audioUrlRef.current = url;
-      const audio = new Audio(url);
-      audio.preload = 'auto';
-      audioRef.current = audio;
-      audio.onended = () => {
-        setIsSpeaking(false);
-        if (audioUrlRef.current) {
-          URL.revokeObjectURL(audioUrlRef.current);
-          audioUrlRef.current = null;
-        }
-      };
-      audio.onerror = () => {
-        setIsSpeaking(false);
-      };
+    const chunks = chunkText(cleaned);
+    if (chunks.length === 0) {
+      setIsSpeaking(false);
       setIsAudioLoading(false);
-      await audio.play();
+      return;
+    }
+
+    // Kick off all chunk fetches in parallel — they'll resolve independently,
+    // but we'll play them strictly in order.
+    const promises: Promise<string>[] = chunks.map((c) =>
+      fetchChunkAudio(c, controller.signal)
+    );
+
+    try {
+      for (let i = 0; i < promises.length; i++) {
+        const url = await promises[i];
+        if (mySeq !== playSeqRef.current) return; // cancelled
+        if (i === 0) setIsAudioLoading(false);
+
+        await new Promise<void>((resolve, reject) => {
+          const audio = new Audio(url);
+          audio.preload = 'auto';
+          audioRef.current = audio;
+          audio.onended = () => resolve();
+          audio.onerror = () => reject(new Error('audio playback error'));
+          audio.play().catch(reject);
+        });
+
+        if (mySeq !== playSeqRef.current) return;
+      }
+      setIsSpeaking(false);
+      cleanupAudioUrls();
     } catch (err) {
-      // Only fall back to browser TTS if Elm fails (network/quota), so users still hear something.
-      if ((err as any)?.name !== 'AbortError') {
-        console.warn('Elm TTS failed, using browser fallback:', err);
-        speakBrowserFallback(cleaned);
-      } else {
+      if ((err as any)?.name === 'AbortError') {
         setIsSpeaking(false);
         setIsAudioLoading(false);
+        return;
       }
+      console.warn('Elm TTS failed, using browser fallback:', err);
+      // Fallback: speak whatever remains via browser TTS so user still hears something
+      if (mySeq === playSeqRef.current) speakBrowserFallback(cleaned);
     }
-  }, [speakBrowserFallback]);
+  }, [speakBrowserFallback, stopSpeaking, cleanupAudioUrls]);
+
 
   // Voice control via Web Speech Recognition
   useEffect(() => {
