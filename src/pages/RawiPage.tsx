@@ -552,7 +552,16 @@ export default function RawiPage() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 + i * 0.05 }}
-                onClick={() => handleSend(categoryPrompts[cat.id])}
+                onClick={() => {
+                  const intro = categoryIntros[cat.id];
+                  if (intro) {
+                    setMessages((prev) => [
+                      ...prev,
+                      { id: `intro-${cat.id}-${Date.now()}`, role: 'assistant', content: intro },
+                    ]);
+                  }
+                  handleSend(categoryPrompts[cat.id]);
+                }}
                 className="bg-card border border-border rounded-2xl p-3 text-right active:scale-[0.97] transition-transform shadow-sm flex items-center gap-2"
               >
                 <span className="flex-shrink-0 w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
