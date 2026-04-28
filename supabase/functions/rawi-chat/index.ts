@@ -92,7 +92,7 @@ function sanitizedSseStream(body: ReadableStream<Uint8Array>) {
   let buffer = "";
   let rawAssistant = "";
   let emitted = "";
-  const holdTail = 12;
+  const holdTail = 40;
 
   const makeChunk = (content: string) =>
     `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`;
