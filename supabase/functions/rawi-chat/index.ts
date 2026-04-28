@@ -273,9 +273,12 @@ Deno.serve(async (req) => {
       );
     }
 
+    // الترحيب فقط في أول رد (لا يوجد رد سابق من المساعد)
+    const isFirstReply = !messages.some((m: { role?: string }) => m?.role === "assistant");
+    const baseSys = isFirstReply ? SYSTEM_PROMPT_FIRST : SYSTEM_PROMPT_BASE;
     const sysContent = place
-      ? `${SYSTEM_PROMPT}\n\nالمستخدم يستفسر حالياً عن: ${place}`
-      : SYSTEM_PROMPT;
+      ? `${baseSys}\n\nالمستخدم يستفسر حالياً عن: ${place}`
+      : baseSys;
     const finalMessages = [{ role: "system", content: sysContent }, ...messages];
 
     const response = await fetch(`${ELM_BASE_URL}/chat/completions`, {
