@@ -24,21 +24,10 @@ interface Conversation {
 const STORAGE_KEY = 'ruwat_conversations';
 
 const categoryPrompts: Record<string, string> = {
-  synonyms: 'قل لي شوي كلمات نستخدمها في نجد ومعناها',
-  proverbs: 'قل لي مثل شعبي نجدي ووش معناه',
-  stories: 'سولف لي سالفة قديمة من الرياض',
-  culture: 'قل لي عن العادات والتراث في الرياض',
-};
-
-const categoryIntros: Record<string, string> = {
-  synonyms:
-    'أهلًا بك، سأعرّفك على الكلمات والمصطلحات المحلية المتداولة في هذه المنطقة، مع شرح معناها وطريقة استخدامها في الحياة اليومية.',
-  proverbs:
-    'رائع، دعنا نستكشف أشهر الأمثال الشعبية في هذه المنطقة، مع معانيها والمواقف الي تُقال فيها.',
-  stories:
-    'جميل، بروي لك قصصًا تراثية وحكايات تناقلها أهل المنطقة جيلًا بعد جيل، لتعيش روح المكان وتاريخه.',
-  culture:
-    'مرحبًا، سنكتشف معًا العادات والتقاليد والفنون والموروث الثقافي الي يميز هذه المنطقة ويعكس هويتها الأصيلة.',
+  synonyms: 'عرّفني على بعض الكلمات والمصطلحات المحلية المتداولة في هذه المنطقة',
+  proverbs: 'اذكر لي بعض الأمثال الشعبية المشهورة في هذه المنطقة',
+  stories: 'احكِ لي قصة تراثية من قصص هذه المنطقة',
+  culture: 'عرّفني على أبرز التراث الثقافي الي موجود في هذه المنطقة',
 };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rawi-chat`;
@@ -553,13 +542,6 @@ export default function RawiPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 + i * 0.05 }}
                 onClick={() => {
-                  const intro = categoryIntros[cat.id];
-                  if (intro) {
-                    setMessages((prev) => [
-                      ...prev,
-                      { id: `intro-${cat.id}-${Date.now()}`, role: 'assistant', content: intro },
-                    ]);
-                  }
                   handleSend(categoryPrompts[cat.id]);
                 }}
                 className="bg-card border border-border rounded-2xl p-3 text-right active:scale-[0.97] transition-transform shadow-sm flex items-center gap-2"
