@@ -1,4 +1,5 @@
 import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
+import { MapPin } from 'lucide-react';
 import { culturalPlaces } from '@/lib/mockData';
 
 const GOOGLE_MAPS_API_KEY = 'AIzaSyB__li1XnzJU765wUSkUiWai-p5G2h1UEk';
@@ -24,6 +25,35 @@ interface Props {
   userLocation: { lat: number; lng: number; city: string };
 }
 
+function StaticMapFallback({ userLocation }: Props) {
+  return (
+    <div className="relative w-full h-full overflow-hidden bg-secondary">
+      <div className="absolute inset-0 opacity-70" style={{ backgroundImage: 'linear-gradient(90deg, hsl(var(--border)) 1px, transparent 1px), linear-gradient(0deg, hsl(var(--border)) 1px, transparent 1px)', backgroundSize: '34px 34px' }} />
+      <div className="absolute inset-0 bg-gradient-to-br from-heritage-sand/40 via-transparent to-primary/10" />
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-primary border-[3px] border-card shadow-md flex items-center justify-center">
+        <MapPin size={17} className="text-primary-foreground" />
+      </div>
+      {culturalPlaces.slice(0, 5).map((place, index) => (
+        <div
+          key={place.id}
+          className="absolute w-7 h-7 rounded-full bg-heritage-brown border-2 border-card shadow-sm flex items-center justify-center"
+          style={{
+            right: `${18 + (index % 3) * 26}%`,
+            top: `${22 + Math.floor(index / 3) * 34}%`,
+          }}
+          title={place.name}
+        >
+          <MapPin size={13} className="text-primary-foreground" />
+        </div>
+      ))}
+      <div className="absolute bottom-2 left-2 right-2 rounded-xl bg-card/90 px-3 py-2 text-right shadow-sm">
+        <p className="text-xs font-heading text-heritage-brown">خريطة {userLocation.city}</p>
+        <p className="text-[10px] text-muted-foreground">تعذر تحميل الخريطة الحية مؤقتًا</p>
+      </div>
+    </div>
+  );
+}
+
 export default function HomeMapPreview({ userLocation }: Props) {
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
@@ -31,16 +61,7 @@ export default function HomeMapPreview({ userLocation }: Props) {
   });
 
   if (loadError) {
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-heritage-sand px-4 text-center">
-        <div>
-          <p className="font-heading text-xs text-heritage-brown">تعذر تحميل الخريطة</p>
-          <p className="mt-1 text-[10px] text-muted-foreground">
-            تأكد من تفعيل Billing و Maps JavaScript API
-          </p>
-        </div>
-      </div>
-    );
+    return <StaticMapFallback userLocation={userLocation} />;
   }
 
   if (!isLoaded) {
