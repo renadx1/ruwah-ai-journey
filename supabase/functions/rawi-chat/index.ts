@@ -107,16 +107,15 @@ function sanitizeDialect(text: string) {
   return out;
 }
 
-// تدقيق إملائي عبر Lovable AI لجملة واحدة فقط (سريع، يحافظ على المعنى واللهجة)
-async function spellCheckSentence(sentence: string): Promise<string> {
+// تدقيق إملائي عبر Lovable AI لنص كامل (يحافظ على المعنى واللهجة)
+async function spellCheckText(text: string): Promise<string> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  if (!LOVABLE_API_KEY) return sentence;
-  // لا تدقّق الجمل القصيرة جداً (ترحيب، علامات ترقيم)
-  if (sentence.trim().length < 8) return sentence;
+  if (!LOVABLE_API_KEY) return text;
+  if (text.trim().length < 8) return text;
 
   try {
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 4000); // مهلة 4 ثواني كحد أقصى
+    const timer = setTimeout(() => ctrl.abort(), 8000); // مهلة 8 ثواني للنص الكامل
 
     const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -129,9 +128,9 @@ async function spellCheckSentence(sentence: string): Promise<string> {
         messages: [
           {
             role: "system",
-            content: "أنت مدقّق إملائي للعربية واللهجة النجدية. صحّح الأخطاء الإملائية فقط (كلمات مكسورة بمسافة، حروف ناقصة، همزات، كلمات ملتصقة) دون تغيير المعنى أو الأسلوب أو إضافة أي شيء. لا تترجم، لا تشرح، لا تغيّر اللهجة. أرجع النص المصحَّح فقط بدون أي مقدمة أو علامات اقتباس."
+            content: "أنت مدقّق إملائي للعربية واللهجة النجدية. صحّح الأخطاء الإملائية فقط (كلمات مكسورة بمسافة، حروف ناقصة، همزات، كلمات ملتصقة، علامات ترقيم) دون تغيير المعنى أو الأسلوب أو حذف/إضافة أي محتوى. لا تترجم، لا تشرح، لا تغيّر اللهجة، لا تختصر. أرجع النص المصحَّح كاملاً فقط بدون أي مقدمة أو تعليق أو علامات اقتباس."
           },
-          { role: "user", content: sentence }
+          { role: "user", content: text }
         ],
         temperature: 0,
         stream: false,
@@ -140,15 +139,15 @@ async function spellCheckSentence(sentence: string): Promise<string> {
     });
     clearTimeout(timer);
 
-    if (!resp.ok) return sentence;
+    if (!resp.ok) return text;
     const data = await resp.json();
     const fixed = data?.choices?.[0]?.message?.content;
-    if (typeof fixed !== "string" || !fixed.trim()) return sentence;
-    // حماية: لو الرد طوله مختلف بشكل كبير (>1.5x) رجّع الأصل
-    if (fixed.length > sentence.length * 1.5 || fixed.length < sentence.length * 0.5) return sentence;
+    if (typeof fixed !== "string" || !fixed.trim()) return text;
+    // حماية: لو الرد قصير أو طويل جداً عن الأصل رجّع الأصل
+    if (fixed.length > text.length * 1.4 || fixed.length < text.length * 0.7) return text;
     return fixed.trim();
   } catch {
-    return sentence;
+    return text;
   }
 }
 
@@ -166,17 +165,17 @@ function splitIntoSentences(text: string): { sentences: string[]; remainder: str
   return { sentences, remainder };
 }
 
-// بث حي حرف-بحرف: نمرّر دفعات النموذج فوراً بعد تنظيف خفيف فقط
-// نحتفظ بآخر كلمة غير مكتملة في "tail" حتى تنتهي قبل تنظيفها (لتفادي قطع الكلمة)
+// بث حي حرف-بحرف، ثم في النهاية يرسل تصحيحاً إملائياً يستبدل النص كاملاً
 function sanitizedSseStream(body: ReadableStream<Uint8Array>) {
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
   const reader = body.getReader();
   let buffer = "";
-  let tail = ""; // كلمة جزئية لم تكتمل بعد
+  let tail = "";        // كلمة جزئية لم تكتمل بعد
+  let fullEmitted = ""; // كل ما بثثناه للعميل (نص خام بعد التنظيف الخفيف)
 
-  const makeChunk = (content: string) =>
-    `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`;
+  const makeChunk = (delta: Record<string, unknown>) =>
+    `data: ${JSON.stringify({ choices: [{ delta }] })}\n\n`;
 
   return new ReadableStream<Uint8Array>({
     async pull(controller) {
@@ -185,8 +184,20 @@ function sanitizedSseStream(body: ReadableStream<Uint8Array>) {
         if (done) {
           if (tail) {
             const cleaned = sanitizeDialect(tail);
-            controller.enqueue(encoder.encode(makeChunk(cleaned)));
+            fullEmitted += cleaned;
+            controller.enqueue(encoder.encode(makeChunk({ content: cleaned })));
             tail = "";
+          }
+          // تدقيق إملائي نهائي للنص كاملاً، ثم نرسله كـ replace
+          if (fullEmitted.trim().length >= 8) {
+            try {
+              const corrected = await spellCheckText(fullEmitted);
+              if (corrected && corrected !== fullEmitted) {
+                controller.enqueue(encoder.encode(makeChunk({ replace: corrected })));
+              }
+            } catch (e) {
+              console.error("spellCheckText failed:", e);
+            }
           }
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();
@@ -207,9 +218,7 @@ function sanitizedSseStream(body: ReadableStream<Uint8Array>) {
             const parsed = JSON.parse(payload);
             const content = parsed.choices?.[0]?.delta?.content;
             if (typeof content !== "string" || !content) continue;
-            // نضم المحتوى الجديد للذيل غير المكتمل
             const combined = tail + content;
-            // نقطع عند آخر فاصل (مسافة/سطر/ترقيم) لنحتفظ بكلمة جزئية فقط
             const lastBreak = Math.max(
               combined.lastIndexOf(" "),
               combined.lastIndexOf("\n"),
@@ -231,7 +240,8 @@ function sanitizedSseStream(body: ReadableStream<Uint8Array>) {
         }
 
         if (chunkOut) {
-          controller.enqueue(encoder.encode(makeChunk(chunkOut)));
+          fullEmitted += chunkOut;
+          controller.enqueue(encoder.encode(makeChunk({ content: chunkOut })));
           return;
         }
       }

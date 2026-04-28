@@ -45,7 +45,7 @@ function fileToDataUrl(file: File): Promise<string> {
 async function streamSSE(
   url: string,
   body: any,
-  onDelta: (chunk: string) => void
+  onDelta: (chunk: string, opts?: { replace?: boolean }) => void
 ) {
   const resp = await fetch(url, {
     method: 'POST',
@@ -91,8 +91,14 @@ async function streamSSE(
       }
       try {
         const parsed = JSON.parse(jsonStr);
-        const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-        if (content) onDelta(content);
+        const delta = parsed.choices?.[0]?.delta;
+        const replace = delta?.replace as string | undefined;
+        const content = delta?.content as string | undefined;
+        if (typeof replace === 'string') {
+          onDelta(replace, { replace: true });
+        } else if (content) {
+          onDelta(content);
+        }
       } catch {
         textBuffer = line + '\n' + textBuffer;
         break;
@@ -108,7 +114,7 @@ async function streamElmChat({
 }: {
   messages: { role: 'user' | 'assistant'; content: string }[];
   place?: string;
-  onDelta: (chunk: string) => void;
+  onDelta: (chunk: string, opts?: { replace?: boolean }) => void;
 }) {
   return streamSSE(CHAT_URL, { messages, place }, onDelta);
 }
@@ -122,7 +128,7 @@ async function streamVision({
   images: string[];
   prompt?: string;
   place?: string;
-  onDelta: (chunk: string) => void;
+  onDelta: (chunk: string, opts?: { replace?: boolean }) => void;
 }) {
   return streamSSE(VISION_URL, { images, prompt, place }, onDelta);
 }
@@ -305,8 +311,12 @@ export default function RawiPage() {
     let acc = '';
     let firstChunk = true;
 
-    const onDelta = (chunk: string) => {
-      acc += chunk;
+    const onDelta = (chunk: string, opts?: { replace?: boolean }) => {
+      if (opts?.replace) {
+        acc = chunk;
+      } else {
+        acc += chunk;
+      }
       if (firstChunk) {
         firstChunk = false;
         setIsTyping(false);
