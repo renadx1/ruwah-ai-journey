@@ -45,7 +45,7 @@ function fileToDataUrl(file: File): Promise<string> {
 async function streamSSE(
   url: string,
   body: any,
-  onDelta: (chunk: string) => void
+  onDelta: (chunk: string, opts?: { replace?: boolean }) => void
 ) {
   const resp = await fetch(url, {
     method: 'POST',
@@ -91,8 +91,14 @@ async function streamSSE(
       }
       try {
         const parsed = JSON.parse(jsonStr);
-        const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-        if (content) onDelta(content);
+        const delta = parsed.choices?.[0]?.delta;
+        const replace = delta?.replace as string | undefined;
+        const content = delta?.content as string | undefined;
+        if (typeof replace === 'string') {
+          onDelta(replace, { replace: true });
+        } else if (content) {
+          onDelta(content);
+        }
       } catch {
         textBuffer = line + '\n' + textBuffer;
         break;
