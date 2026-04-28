@@ -165,17 +165,17 @@ function splitIntoSentences(text: string): { sentences: string[]; remainder: str
   return { sentences, remainder };
 }
 
-// بث حي حرف-بحرف: نمرّر دفعات النموذج فوراً بعد تنظيف خفيف فقط
-// نحتفظ بآخر كلمة غير مكتملة في "tail" حتى تنتهي قبل تنظيفها (لتفادي قطع الكلمة)
+// بث حي حرف-بحرف، ثم في النهاية يرسل تصحيحاً إملائياً يستبدل النص كاملاً
 function sanitizedSseStream(body: ReadableStream<Uint8Array>) {
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
   const reader = body.getReader();
   let buffer = "";
-  let tail = ""; // كلمة جزئية لم تكتمل بعد
+  let tail = "";        // كلمة جزئية لم تكتمل بعد
+  let fullEmitted = ""; // كل ما بثثناه للعميل (نص خام بعد التنظيف الخفيف)
 
-  const makeChunk = (content: string) =>
-    `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`;
+  const makeChunk = (delta: Record<string, unknown>) =>
+    `data: ${JSON.stringify({ choices: [{ delta }] })}\n\n`;
 
   return new ReadableStream<Uint8Array>({
     async pull(controller) {
@@ -184,8 +184,20 @@ function sanitizedSseStream(body: ReadableStream<Uint8Array>) {
         if (done) {
           if (tail) {
             const cleaned = sanitizeDialect(tail);
-            controller.enqueue(encoder.encode(makeChunk(cleaned)));
+            fullEmitted += cleaned;
+            controller.enqueue(encoder.encode(makeChunk({ content: cleaned })));
             tail = "";
+          }
+          // تدقيق إملائي نهائي للنص كاملاً، ثم نرسله كـ replace
+          if (fullEmitted.trim().length >= 8) {
+            try {
+              const corrected = await spellCheckText(fullEmitted);
+              if (corrected && corrected !== fullEmitted) {
+                controller.enqueue(encoder.encode(makeChunk({ replace: corrected })));
+              }
+            } catch (e) {
+              console.error("spellCheckText failed:", e);
+            }
           }
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();
@@ -206,9 +218,7 @@ function sanitizedSseStream(body: ReadableStream<Uint8Array>) {
             const parsed = JSON.parse(payload);
             const content = parsed.choices?.[0]?.delta?.content;
             if (typeof content !== "string" || !content) continue;
-            // نضم المحتوى الجديد للذيل غير المكتمل
             const combined = tail + content;
-            // نقطع عند آخر فاصل (مسافة/سطر/ترقيم) لنحتفظ بكلمة جزئية فقط
             const lastBreak = Math.max(
               combined.lastIndexOf(" "),
               combined.lastIndexOf("\n"),
@@ -230,7 +240,8 @@ function sanitizedSseStream(body: ReadableStream<Uint8Array>) {
         }
 
         if (chunkOut) {
-          controller.enqueue(encoder.encode(makeChunk(chunkOut)));
+          fullEmitted += chunkOut;
+          controller.enqueue(encoder.encode(makeChunk({ content: chunkOut })));
           return;
         }
       }
