@@ -1,5 +1,6 @@
 import { useMemo, useCallback } from 'react';
 import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
+import { MapPin } from 'lucide-react';
 import { CulturalPlace } from '@/lib/mockData';
 
 const GOOGLE_MAPS_API_KEY = 'AIzaSyB__li1XnzJU765wUSkUiWai-p5G2h1UEk';
@@ -29,6 +30,44 @@ interface GoogleMapViewProps {
   userLocation: { lat: number; lng: number };
   selectedId?: string | null;
   onSelectPlace: (place: CulturalPlace) => void;
+}
+
+function StaticMapFallback({
+  places,
+  userLocation,
+  selectedId,
+  onSelectPlace,
+}: GoogleMapViewProps) {
+  return (
+    <div className="relative w-full h-full overflow-hidden bg-secondary">
+      <div className="absolute inset-0 opacity-70" style={{ backgroundImage: 'linear-gradient(90deg, hsl(var(--border)) 1px, transparent 1px), linear-gradient(0deg, hsl(var(--border)) 1px, transparent 1px)', backgroundSize: '38px 38px' }} />
+      <div className="absolute inset-0 bg-gradient-to-br from-heritage-sand/50 via-transparent to-primary/10" />
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary border-[3px] border-card shadow-md flex items-center justify-center z-10" title="موقعك">
+        <MapPin size={18} className="text-primary-foreground" />
+      </div>
+      {places.map((place, index) => {
+        const selected = selectedId === place.id;
+        return (
+          <button
+            key={place.id}
+            onClick={() => onSelectPlace(place)}
+            className={`absolute rounded-full border-2 border-card shadow-sm flex items-center justify-center active:scale-95 transition-transform ${selected ? 'w-10 h-10 bg-primary z-20' : 'w-8 h-8 bg-heritage-brown z-10'}`}
+            style={{
+              right: `${14 + (index % 3) * 28}%`,
+              top: `${24 + Math.floor(index / 3) * 26}%`,
+            }}
+            title={place.name}
+          >
+            <MapPin size={selected ? 17 : 14} className="text-primary-foreground" />
+          </button>
+        );
+      })}
+      <div className="absolute bottom-3 left-3 rounded-xl bg-card/90 px-3 py-2 text-right shadow-sm">
+        <p className="text-xs font-heading text-heritage-brown">خريطة احتياطية</p>
+        <p className="text-[10px] text-muted-foreground">تعذر تحميل الخريطة الحية مؤقتًا</p>
+      </div>
+    </div>
+  );
 }
 
 export default function GoogleMapView({
@@ -62,16 +101,7 @@ export default function GoogleMapView({
   );
 
   if (loadError) {
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-heritage-sand p-4 text-center">
-        <div>
-          <p className="text-sm font-heading text-heritage-brown">تعذر تحميل الخريطة</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            تأكد من تفعيل Billing و Maps JavaScript API
-          </p>
-        </div>
-      </div>
-    );
+    return <StaticMapFallback places={places} userLocation={userLocation} selectedId={selectedId} onSelectPlace={onSelectPlace} />;
   }
 
   if (!isLoaded) {
