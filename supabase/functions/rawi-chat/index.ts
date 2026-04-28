@@ -1,7 +1,12 @@
 import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.0/cors";
+import najdiFoods from "./najdi_food.json" with { type: "json" };
 
 const ELM_BASE_URL = Deno.env.get("ELM_BASE_URL") ?? "https://elmodels.ngrok.app/v1";
 const MODEL_NAME = "nuha-2.0";
+
+const NAJDI_FOODS_REF = (najdiFoods as Array<{name:string;desc:string;meal:string;season:string;taste:string;region:string}>)
+  .map(f => `- ${f.name}: ${f.desc} (${f.meal}، ${f.season}، ${f.taste}، ${f.region})`)
+  .join("\n");
 
 function sanitizeDialect(text: string) {
   return text;
