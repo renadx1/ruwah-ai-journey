@@ -239,8 +239,8 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: MODEL_NAME,
         messages: [{ role: "system", content: sysContent }, ...messages],
-        temperature: 0.15,
-        top_p: 0.8,
+        temperature: 0.45,
+        top_p: 0.9,
         stream: true,
       }),
     });
