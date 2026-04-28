@@ -107,16 +107,15 @@ function sanitizeDialect(text: string) {
   return out;
 }
 
-// تدقيق إملائي عبر Lovable AI لجملة واحدة فقط (سريع، يحافظ على المعنى واللهجة)
-async function spellCheckSentence(sentence: string): Promise<string> {
+// تدقيق إملائي عبر Lovable AI لنص كامل (يحافظ على المعنى واللهجة)
+async function spellCheckText(text: string): Promise<string> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  if (!LOVABLE_API_KEY) return sentence;
-  // لا تدقّق الجمل القصيرة جداً (ترحيب، علامات ترقيم)
-  if (sentence.trim().length < 8) return sentence;
+  if (!LOVABLE_API_KEY) return text;
+  if (text.trim().length < 8) return text;
 
   try {
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 4000); // مهلة 4 ثواني كحد أقصى
+    const timer = setTimeout(() => ctrl.abort(), 8000); // مهلة 8 ثواني للنص الكامل
 
     const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -129,9 +128,9 @@ async function spellCheckSentence(sentence: string): Promise<string> {
         messages: [
           {
             role: "system",
-            content: "أنت مدقّق إملائي للعربية واللهجة النجدية. صحّح الأخطاء الإملائية فقط (كلمات مكسورة بمسافة، حروف ناقصة، همزات، كلمات ملتصقة) دون تغيير المعنى أو الأسلوب أو إضافة أي شيء. لا تترجم، لا تشرح، لا تغيّر اللهجة. أرجع النص المصحَّح فقط بدون أي مقدمة أو علامات اقتباس."
+            content: "أنت مدقّق إملائي للعربية واللهجة النجدية. صحّح الأخطاء الإملائية فقط (كلمات مكسورة بمسافة، حروف ناقصة، همزات، كلمات ملتصقة، علامات ترقيم) دون تغيير المعنى أو الأسلوب أو حذف/إضافة أي محتوى. لا تترجم، لا تشرح، لا تغيّر اللهجة، لا تختصر. أرجع النص المصحَّح كاملاً فقط بدون أي مقدمة أو تعليق أو علامات اقتباس."
           },
-          { role: "user", content: sentence }
+          { role: "user", content: text }
         ],
         temperature: 0,
         stream: false,
@@ -140,15 +139,15 @@ async function spellCheckSentence(sentence: string): Promise<string> {
     });
     clearTimeout(timer);
 
-    if (!resp.ok) return sentence;
+    if (!resp.ok) return text;
     const data = await resp.json();
     const fixed = data?.choices?.[0]?.message?.content;
-    if (typeof fixed !== "string" || !fixed.trim()) return sentence;
-    // حماية: لو الرد طوله مختلف بشكل كبير (>1.5x) رجّع الأصل
-    if (fixed.length > sentence.length * 1.5 || fixed.length < sentence.length * 0.5) return sentence;
+    if (typeof fixed !== "string" || !fixed.trim()) return text;
+    // حماية: لو الرد قصير أو طويل جداً عن الأصل رجّع الأصل
+    if (fixed.length > text.length * 1.4 || fixed.length < text.length * 0.7) return text;
     return fixed.trim();
   } catch {
-    return sentence;
+    return text;
   }
 }
 
