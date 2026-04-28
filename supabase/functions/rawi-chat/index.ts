@@ -1,5 +1,6 @@
 import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.0/cors";
 import najdiFoods from "./najdi_food.json" with { type: "json" };
+import riyadhKnowledge from "./riyadh_knowledge.json" with { type: "json" };
 
 const ELM_BASE_URL = Deno.env.get("ELM_BASE_URL") ?? "https://elmodels.ngrok.app/v1";
 const MODEL_NAME = "nuha-2.0";
@@ -7,6 +8,23 @@ const MODEL_NAME = "nuha-2.0";
 const NAJDI_FOODS_REF = (najdiFoods as Array<{name:string;desc:string;meal:string;season:string;taste:string;region:string}>)
   .map(f => `- ${f.name}: ${f.desc} (${f.meal}، ${f.season}، ${f.taste}، ${f.region})`)
   .join("\n");
+
+type RK = {
+  words: Array<{الكلمة:string;المعنى:string;مثال:string;ملاحظة:string}>;
+  proverbs: Array<{المثل:string;المعنى:string;المناسبة:string;ملاحظة:string}>;
+  customs: Array<{العادة:string;الوصف:string;المناسبة:string;ملاحظة:string}>;
+  places: Array<{الاسم:string;النوع:string;"مشهور بـ":string;المنطقة:string}>;
+  qa: Array<{السؤال:string;الجواب:string}>;
+};
+const RK = riyadhKnowledge as RK;
+
+const RIYADH_WORDS_REF = RK.words.map(w => `- ${w.الكلمة}: ${w.المعنى}`).join("\n");
+const RIYADH_PROVERBS_REF = RK.proverbs.map(p => `- ${p.المثل} — ${p.المعنى}`).join("\n");
+const RIYADH_CUSTOMS_REF = RK.customs.map(c => `- ${c.العادة}: ${c.الوصف} (${c.المناسبة})`).join("\n");
+const RIYADH_PLACES_REF = RK.places.map(p => `- ${p.الاسم} (${p.النوع}، ${p.المنطقة}): مشهور بـ${p["مشهور بـ"]}`).join("\n");
+const RIYADH_QA_REF = RK.qa.map(q => `س: ${q.السؤال}\nج: ${q.الجواب}`).join("\n");
+
+const RIYADH_KNOWLEDGE_BLOCK = `\n\nمرجعية موثوقة عن الرياض — استخدمها كأساس في إجاباتك ولا تخترع خارجها:\n\n[كلمات الرياض ومعانيها]\n${RIYADH_WORDS_REF}\n\n[أمثال شعبية]\n${RIYADH_PROVERBS_REF}\n\n[عادات وتراث]\n${RIYADH_CUSTOMS_REF}\n\n[أماكن الرياض]\n${RIYADH_PLACES_REF}\n\n[أسئلة شائعة وإجاباتها]\n${RIYADH_QA_REF}`;
 
 // قاموس تعابير شائعة يجب أن تكون مفصولة بمسافة
 const COMMON_PHRASES: Array<[RegExp, string]> = [
