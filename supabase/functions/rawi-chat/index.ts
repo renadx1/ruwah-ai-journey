@@ -68,7 +68,7 @@ function sanitizedSseStream(body: ReadableStream<Uint8Array>) {
   });
 }
 
-const SYSTEM_PROMPT = ``;
+
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
