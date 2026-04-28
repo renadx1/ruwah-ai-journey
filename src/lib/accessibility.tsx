@@ -33,8 +33,9 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isAudioLoading, setIsAudioLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const audioUrlRef = useRef<string | null>(null);
+  const audioUrlsRef = useRef<string[]>([]);
   const ttsAbortRef = useRef<AbortController | null>(null);
+  const playSeqRef = useRef(0);
 
   const largeText = textScale > 1.001;
 
