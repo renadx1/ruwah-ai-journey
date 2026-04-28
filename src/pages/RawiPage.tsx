@@ -114,7 +114,7 @@ async function streamElmChat({
 }: {
   messages: { role: 'user' | 'assistant'; content: string }[];
   place?: string;
-  onDelta: (chunk: string) => void;
+  onDelta: (chunk: string, opts?: { replace?: boolean }) => void;
 }) {
   return streamSSE(CHAT_URL, { messages, place }, onDelta);
 }
