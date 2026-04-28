@@ -166,65 +166,27 @@ function splitIntoSentences(text: string): { sentences: string[]; remainder: str
   return { sentences, remainder };
 }
 
+// بث حي حرف-بحرف: نمرّر دفعات النموذج فوراً بعد تنظيف خفيف فقط
+// نحتفظ بآخر كلمة غير مكتملة في "tail" حتى تنتهي قبل تنظيفها (لتفادي قطع الكلمة)
 function sanitizedSseStream(body: ReadableStream<Uint8Array>) {
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
   const reader = body.getReader();
   let buffer = "";
-  let rawAssistant = "";       // كل ما استلمناه من النموذج
-  let processedUpTo = 0;       // أين وصلنا في تقسيم الجمل من rawAssistant
-  let pendingEmit = "";        // نص جاهز للبث (مدقَّق)
-  let emitting = false;        // قفل لمنع تداخل عمليات التدقيق
+  let tail = ""; // كلمة جزئية لم تكتمل بعد
 
   const makeChunk = (content: string) =>
     `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`;
 
-  // يدقّق أي جمل كاملة جديدة ويضيفها لـ pendingEmit
-  const processNewSentences = async () => {
-    if (emitting) return;
-    emitting = true;
-    try {
-      const newText = rawAssistant.slice(processedUpTo);
-      const { sentences, remainder } = splitIntoSentences(newText);
-      if (sentences.length === 0) return;
-      for (const s of sentences) {
-        const cleaned = sanitizeDialect(s);
-        const checked = await spellCheckSentence(cleaned);
-        // نحافظ على المسافات الأصلية لو الـ AI شالها
-        const trailingWs = s.match(/[\s\n]*$/)?.[0] ?? "";
-        pendingEmit += checked.replace(/[\s\n]+$/, "") + trailingWs;
-      }
-      processedUpTo += newText.length - remainder.length;
-    } finally {
-      emitting = false;
-    }
-  };
-
   return new ReadableStream<Uint8Array>({
     async pull(controller) {
       while (true) {
-        // ابعث أي نص جاهز أولاً
-        if (pendingEmit) {
-          const out = pendingEmit;
-          pendingEmit = "";
-          controller.enqueue(encoder.encode(makeChunk(out)));
-          return;
-        }
-
         const { done, value } = await reader.read();
         if (done) {
-          // دقّق الجمل المتبقية + أي بقايا
-          await processNewSentences();
-          const tail = rawAssistant.slice(processedUpTo);
-          if (tail.trim()) {
+          if (tail) {
             const cleaned = sanitizeDialect(tail);
-            const checked = await spellCheckSentence(cleaned);
-            pendingEmit += checked;
-            processedUpTo = rawAssistant.length;
-          }
-          if (pendingEmit) {
-            controller.enqueue(encoder.encode(makeChunk(pendingEmit)));
-            pendingEmit = "";
+            controller.enqueue(encoder.encode(makeChunk(cleaned)));
+            tail = "";
           }
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();
@@ -235,6 +197,7 @@ function sanitizedSseStream(body: ReadableStream<Uint8Array>) {
         const lines = buffer.split("\n");
         buffer = lines.pop() ?? "";
 
+        let chunkOut = "";
         for (const rawLine of lines) {
           const line = rawLine.endsWith("\r") ? rawLine.slice(0, -1) : rawLine;
           if (!line.startsWith("data: ")) continue;
@@ -244,19 +207,31 @@ function sanitizedSseStream(body: ReadableStream<Uint8Array>) {
             const parsed = JSON.parse(payload);
             const content = parsed.choices?.[0]?.delta?.content;
             if (typeof content !== "string" || !content) continue;
-            rawAssistant += content;
+            // نضم المحتوى الجديد للذيل غير المكتمل
+            const combined = tail + content;
+            // نقطع عند آخر فاصل (مسافة/سطر/ترقيم) لنحتفظ بكلمة جزئية فقط
+            const lastBreak = Math.max(
+              combined.lastIndexOf(" "),
+              combined.lastIndexOf("\n"),
+              combined.lastIndexOf("،"),
+              combined.lastIndexOf("."),
+              combined.lastIndexOf("؟"),
+              combined.lastIndexOf("!"),
+            );
+            if (lastBreak >= 0) {
+              const ready = combined.slice(0, lastBreak + 1);
+              tail = combined.slice(lastBreak + 1);
+              chunkOut += sanitizeDialect(ready);
+            } else {
+              tail = combined;
+            }
           } catch {
             buffer = `${line}\n${buffer}`;
-            return;
           }
         }
 
-        // بعد كل دفعة: دقّق أي جمل كاملة جديدة
-        await processNewSentences();
-        if (pendingEmit) {
-          const out = pendingEmit;
-          pendingEmit = "";
-          controller.enqueue(encoder.encode(makeChunk(out)));
+        if (chunkOut) {
+          controller.enqueue(encoder.encode(makeChunk(chunkOut)));
           return;
         }
       }
@@ -266,7 +241,12 @@ function sanitizedSseStream(body: ReadableStream<Uint8Array>) {
     },
   });
 }
-const SYSTEM_PROMPT = `أنت "الراوي" داخل تطبيق رواة. ابدأ أول رد بترحيب طبيعي مثل: حياك الله، هلا بك، يا هلا، أهلًا وسهلًا. قدّم معلومة مفيدة وواضحة عن أي صنف يسأل عنه المستخدم: كلمات محلية، أمثال، قصص، تراث، أكلات، عادات، أو معالم. اجعل الرد لا يتجاوز 5 سطور كحد أقصى.
+const SYSTEM_PROMPT_BASE = `أنت "الراوي" داخل تطبيق رواة. قدّم معلومة مفيدة وواضحة عن أي صنف يسأل عنه المستخدم: كلمات محلية، أمثال، قصص، تراث، أكلات، عادات، أو معالم. اجعل الرد لا يتجاوز 5 سطور كحد أقصى. ادخل في صلب الإجابة مباشرة بدون ترحيب أو مقدمات (لا تقل "حياك الله" ولا "أهلًا" ولا "هلا" ولا أي تحية في بداية الرد).
+
+عند السؤال عن الأكلات النجدية، اعتمد على هذه المرجعية الموثوقة فقط ولا تخترع أكلات خارجها:
+${NAJDI_FOODS_REF}`;
+
+const SYSTEM_PROMPT_FIRST = `أنت "الراوي" داخل تطبيق رواة. ابدأ هذا الرد فقط بترحيب قصير وطبيعي مثل: حياك الله، هلا بك، يا هلا، أهلًا وسهلًا. ثم قدّم معلومة مفيدة وواضحة عن أي صنف يسأل عنه المستخدم: كلمات محلية، أمثال، قصص، تراث، أكلات، عادات، أو معالم. اجعل الرد لا يتجاوز 5 سطور كحد أقصى.
 
 عند السؤال عن الأكلات النجدية، اعتمد على هذه المرجعية الموثوقة فقط ولا تخترع أكلات خارجها:
 ${NAJDI_FOODS_REF}`;
@@ -293,9 +273,12 @@ Deno.serve(async (req) => {
       );
     }
 
+    // الترحيب فقط في أول رد (لا يوجد رد سابق من المساعد)
+    const isFirstReply = !messages.some((m: { role?: string }) => m?.role === "assistant");
+    const baseSys = isFirstReply ? SYSTEM_PROMPT_FIRST : SYSTEM_PROMPT_BASE;
     const sysContent = place
-      ? `${SYSTEM_PROMPT}\n\nالمستخدم يستفسر حالياً عن: ${place}`
-      : SYSTEM_PROMPT;
+      ? `${baseSys}\n\nالمستخدم يستفسر حالياً عن: ${place}`
+      : baseSys;
     const finalMessages = [{ role: "system", content: sysContent }, ...messages];
 
     const response = await fetch(`${ELM_BASE_URL}/chat/completions`, {
