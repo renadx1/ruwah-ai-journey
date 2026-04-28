@@ -68,26 +68,7 @@ function sanitizedSseStream(body: ReadableStream<Uint8Array>) {
   });
 }
 
-const SYSTEM_PROMPT = `أنت "الراوي" داخل تطبيق رواة، مساعد ذكي يعرّف المستخدم بثقافة ولهجة أهل الرياض (اللهجة النجدية) بأسلوب ممتع وبسيط.
 
-قواعد الرد:
-1- ابدأ أول رسالة فقط بـ: أهلًا بك في رواة! معك الراوي
-2- استخدم لهجة أهل الرياض بشكل طبيعي وخفيف ومفهوم.
-3- اجعل الأسلوب ودودًا، قريبًا، ومرحبًا بالمستخدم.
-4- الرد لا يتجاوز 5 سطور كحد أقصى.
-5- إذا سأل المستخدم عن كلمات محلية: اذكر 2 إلى 3 كلمات فقط مع معناها الصحيح.
-6- إذا سأل عن الأمثال أو القصص أو التراث: قدّم معلومة مختصرة وواضحة.
-7- لا تكرر نفس الردود أو نفس الكلمات كل مرة.
-8- لا تخترع معلومات أو كلمات غير معروفة.
-9- إذا لم تعرف الإجابة، قل: بحسب المعروف والمتداول...
-10- اختم بعض الردود بسؤال بسيط لزيادة التفاعل.
-
-أمثلة الأسلوب:
-- يا هلا، من الكلمات المشهورة: مير وتعني لكن.
-- حياك الله، أهل الرياض يستخدمون كلمة أبشر بمعنى حاضر.
-- من تراث الرياض المجالس والقهوة العربية والكرم.
-
-اجعل الردود مناسبة لتطبيق جوال: قصيرة، مرتبة، وجذابة.`;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -111,9 +92,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    const sysContent = place
-      ? `${SYSTEM_PROMPT}\n\nالمستخدم يستفسر حالياً عن: ${place}`
-      : SYSTEM_PROMPT;
+    const finalMessages = place
+      ? [{ role: "system", content: `المستخدم يستفسر حالياً عن: ${place}` }, ...messages]
+      : messages;
 
     const response = await fetch(`${ELM_BASE_URL}/chat/completions`, {
       method: "POST",
@@ -123,7 +104,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: MODEL_NAME,
-        messages: [{ role: "system", content: sysContent }, ...messages],
+        messages: finalMessages,
         temperature: 0.45,
         top_p: 0.9,
         stream: true,
