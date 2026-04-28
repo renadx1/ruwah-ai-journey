@@ -107,26 +107,125 @@ function sanitizeDialect(text: string) {
   return out;
 }
 
+// تدقيق إملائي عبر Lovable AI لجملة واحدة فقط (سريع، يحافظ على المعنى واللهجة)
+async function spellCheckSentence(sentence: string): Promise<string> {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) return sentence;
+  // لا تدقّق الجمل القصيرة جداً (ترحيب، علامات ترقيم)
+  if (sentence.trim().length < 8) return sentence;
+
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 4000); // مهلة 4 ثواني كحد أقصى
+
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-lite",
+        messages: [
+          {
+            role: "system",
+            content: "أنت مدقّق إملائي للعربية واللهجة النجدية. صحّح الأخطاء الإملائية فقط (كلمات مكسورة بمسافة، حروف ناقصة، همزات، كلمات ملتصقة) دون تغيير المعنى أو الأسلوب أو إضافة أي شيء. لا تترجم، لا تشرح، لا تغيّر اللهجة. أرجع النص المصحَّح فقط بدون أي مقدمة أو علامات اقتباس."
+          },
+          { role: "user", content: sentence }
+        ],
+        temperature: 0,
+        stream: false,
+      }),
+      signal: ctrl.signal,
+    });
+    clearTimeout(timer);
+
+    if (!resp.ok) return sentence;
+    const data = await resp.json();
+    const fixed = data?.choices?.[0]?.message?.content;
+    if (typeof fixed !== "string" || !fixed.trim()) return sentence;
+    // حماية: لو الرد طوله مختلف بشكل كبير (>1.5x) رجّع الأصل
+    if (fixed.length > sentence.length * 1.5 || fixed.length < sentence.length * 0.5) return sentence;
+    return fixed.trim();
+  } catch {
+    return sentence;
+  }
+}
+
+// يفصل النص لجمل كاملة (تنتهي بـ . ! ؟ \n) + ما تبقى من جملة جزئية
+function splitIntoSentences(text: string): { sentences: string[]; remainder: string } {
+  const re = /[^.!؟\n]+[.!؟\n]+/g;
+  const sentences: string[] = [];
+  let lastIdx = 0;
+  let match;
+  while ((match = re.exec(text)) !== null) {
+    sentences.push(match[0]);
+    lastIdx = match.index + match[0].length;
+  }
+  const remainder = text.slice(lastIdx);
+  return { sentences, remainder };
+}
+
 function sanitizedSseStream(body: ReadableStream<Uint8Array>) {
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
   const reader = body.getReader();
   let buffer = "";
-  let rawAssistant = "";
-  let emitted = "";
-  const holdTail = 40;
+  let rawAssistant = "";       // كل ما استلمناه من النموذج
+  let processedUpTo = 0;       // أين وصلنا في تقسيم الجمل من rawAssistant
+  let pendingEmit = "";        // نص جاهز للبث (مدقَّق)
+  let emitting = false;        // قفل لمنع تداخل عمليات التدقيق
 
   const makeChunk = (content: string) =>
     `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`;
 
+  // يدقّق أي جمل كاملة جديدة ويضيفها لـ pendingEmit
+  const processNewSentences = async () => {
+    if (emitting) return;
+    emitting = true;
+    try {
+      const newText = rawAssistant.slice(processedUpTo);
+      const { sentences, remainder } = splitIntoSentences(newText);
+      if (sentences.length === 0) return;
+      for (const s of sentences) {
+        const cleaned = sanitizeDialect(s);
+        const checked = await spellCheckSentence(cleaned);
+        // نحافظ على المسافات الأصلية لو الـ AI شالها
+        const trailingWs = s.match(/[\s\n]*$/)?.[0] ?? "";
+        pendingEmit += checked.replace(/[\s\n]+$/, "") + trailingWs;
+      }
+      processedUpTo += newText.length - remainder.length;
+    } finally {
+      emitting = false;
+    }
+  };
+
   return new ReadableStream<Uint8Array>({
     async pull(controller) {
       while (true) {
+        // ابعث أي نص جاهز أولاً
+        if (pendingEmit) {
+          const out = pendingEmit;
+          pendingEmit = "";
+          controller.enqueue(encoder.encode(makeChunk(out)));
+          return;
+        }
+
         const { done, value } = await reader.read();
         if (done) {
-          const finalText = sanitizeDialect(rawAssistant);
-          const rest = finalText.slice(emitted.length);
-          if (rest) controller.enqueue(encoder.encode(makeChunk(rest)));
+          // دقّق الجمل المتبقية + أي بقايا
+          await processNewSentences();
+          const tail = rawAssistant.slice(processedUpTo);
+          if (tail.trim()) {
+            const cleaned = sanitizeDialect(tail);
+            const checked = await spellCheckSentence(cleaned);
+            pendingEmit += checked;
+            processedUpTo = rawAssistant.length;
+          }
+          if (pendingEmit) {
+            controller.enqueue(encoder.encode(makeChunk(pendingEmit)));
+            pendingEmit = "";
+          }
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();
           return;
@@ -145,20 +244,20 @@ function sanitizedSseStream(body: ReadableStream<Uint8Array>) {
             const parsed = JSON.parse(payload);
             const content = parsed.choices?.[0]?.delta?.content;
             if (typeof content !== "string" || !content) continue;
-
             rawAssistant += content;
-            const safeText = sanitizeDialect(rawAssistant);
-            const emitUntil = Math.max(0, safeText.length - holdTail);
-            if (emitUntil > emitted.length) {
-              const delta = safeText.slice(emitted.length, emitUntil);
-              emitted = safeText.slice(0, emitUntil);
-              controller.enqueue(encoder.encode(makeChunk(delta)));
-              return;
-            }
           } catch {
             buffer = `${line}\n${buffer}`;
             return;
           }
+        }
+
+        // بعد كل دفعة: دقّق أي جمل كاملة جديدة
+        await processNewSentences();
+        if (pendingEmit) {
+          const out = pendingEmit;
+          pendingEmit = "";
+          controller.enqueue(encoder.encode(makeChunk(out)));
+          return;
         }
       }
     },
