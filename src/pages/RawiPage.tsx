@@ -30,6 +30,17 @@ const categoryPrompts: Record<string, string> = {
   culture: 'قل لي عن العادات والتراث في الرياض',
 };
 
+const categoryIntros: Record<string, string> = {
+  synonyms:
+    'أهلًا بك، سأعرّفك على الكلمات والمصطلحات المحلية المتداولة في هذه المنطقة، مع شرح معناها وطريقة استخدامها في الحياة اليومية.',
+  proverbs:
+    'رائع، دعنا نستكشف أشهر الأمثال الشعبية في هذه المنطقة، مع معانيها والمواقف الي تُقال فيها.',
+  stories:
+    'جميل، بروي لك قصصًا تراثية وحكايات تناقلها أهل المنطقة جيلًا بعد جيل، لتعيش روح المكان وتاريخه.',
+  culture:
+    'مرحبًا، سنكتشف معًا العادات والتقاليد والفنون والموروث الثقافي الي يميز هذه المنطقة ويعكس هويتها الأصيلة.',
+};
+
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rawi-chat`;
 const VISION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rawi-vision`;
 
