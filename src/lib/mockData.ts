@@ -14,6 +14,13 @@ export interface CulturalPlace {
   entryFee: string; // رسوم الدخول
   accessible: boolean; // يدعم الاحتياجات الخاصة
   openingHours: string;
+  whyFamous?: string; // لماذا مشهور
+  activities?: string[]; // الأنشطة
+  familyFriendly?: boolean; // مناسب للعوائل
+  visitDuration?: string; // مدة الزيارة المقترحة
+  nearbyPlaces?: string[]; // أقرب أماكن
+  officialUrl?: string; // رابط رسمي
+  faqs?: { q: string; a: string }[]; // أسئلة متوقعة
 }
 
 // Riyadh popular cultural places — accurate coordinates
