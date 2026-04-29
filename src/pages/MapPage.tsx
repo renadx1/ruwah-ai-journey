@@ -138,70 +138,7 @@ export default function MapPage() {
                   <InfoChip icon={<Star size={14} className="fill-heritage-brown" />} label={`تقييم ${selected.rating}`} />
                   <InfoChip icon={<Ticket size={14} />} label={selected.entryFee} />
                   <InfoChip icon={<Clock size={14} />} label={selected.openingHours} />
-                  {selected.visitDuration && (
-                    <InfoChip icon={<Clock size={14} />} label={`مدة الزيارة: ${selected.visitDuration}`} full />
-                  )}
                 </div>
-
-                {selected.whyFamous && (
-                  <div className="bg-primary/5 rounded-2xl p-3 mb-3 text-right" dir="rtl">
-                    <h3 className="font-heading font-semibold text-xs text-heritage-brown mb-1">لماذا مشهور</h3>
-                    <p className="text-xs text-foreground/80 leading-relaxed">{selected.whyFamous}</p>
-                  </div>
-                )}
-
-                {selected.activities && selected.activities.length > 0 && (
-                  <div className="mb-3 text-right" dir="rtl">
-                    <h3 className="font-heading font-semibold text-xs text-heritage-brown mb-2">الأنشطة</h3>
-                    <div className="flex flex-wrap gap-1.5">
-                      {selected.activities.map((a) => (
-                        <span key={a} className="text-[11px] bg-secondary text-heritage-brown px-2.5 py-1 rounded-full font-heading">
-                          {a}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {selected.nearbyPlaces && selected.nearbyPlaces.length > 0 && (
-                  <div className="mb-3 text-right" dir="rtl">
-                    <h3 className="font-heading font-semibold text-xs text-heritage-brown mb-2">أقرب أماكن</h3>
-                    <div className="flex flex-wrap gap-1.5">
-                      {selected.nearbyPlaces.map((p) => (
-                        <span key={p} className="text-[11px] bg-secondary/60 text-heritage-brown px-2.5 py-1 rounded-full font-heading flex items-center gap-1">
-                          <MapPin size={10} />
-                          {p}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {selected.faqs && selected.faqs.length > 0 && (
-                  <div className="mb-3 text-right" dir="rtl">
-                    <h3 className="font-heading font-semibold text-xs text-heritage-brown mb-2">أسئلة شائعة</h3>
-                    <div className="space-y-2">
-                      {selected.faqs.map((f, i) => (
-                        <div key={i} className="bg-secondary/40 rounded-xl p-2.5">
-                          <p className="text-[11px] font-heading text-heritage-brown mb-1">{f.q}</p>
-                          <p className="text-[11px] text-foreground/75 leading-relaxed">{f.a}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {selected.officialUrl && (
-                  <a
-                    href={selected.officialUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block text-[11px] text-primary underline text-right mb-3 font-heading"
-                    dir="rtl"
-                  >
-                    الموقع الرسمي ↗
-                  </a>
-                )}
 
                 {/* Accessibility section */}
                 <div className="bg-secondary/60 rounded-2xl p-3 mb-4 text-right" dir="rtl">

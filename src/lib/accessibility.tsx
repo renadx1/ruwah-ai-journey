@@ -14,6 +14,7 @@ type AccessibilityState = {
   speak: (text: string) => void;
   stopSpeaking: () => void;
   isSpeaking: boolean;
+  isAudioLoading: boolean;
 };
 
 const Ctx = createContext<AccessibilityState | null>(null);
@@ -30,8 +31,10 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
   const [highContrast, setHighContrast] = useState(() => localStorage.getItem('a11y_contrast') === '1');
   const [voiceControl, setVoiceControl] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isAudioLoading, setIsAudioLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
+  const ttsAbortRef = useRef<AbortController | null>(null);
 
   const largeText = textScale > 1.001;
 
@@ -66,7 +69,12 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
       URL.revokeObjectURL(audioUrlRef.current);
       audioUrlRef.current = null;
     }
+    if (ttsAbortRef.current) {
+      ttsAbortRef.current.abort();
+      ttsAbortRef.current = null;
+    }
     setIsSpeaking(false);
+    setIsAudioLoading(false);
   }, []);
 
   const speakBrowserFallback = useCallback((cleaned: string) => {
@@ -74,11 +82,12 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(cleaned);
     utter.lang = 'ar-SA';
-    utter.rate = 0.95;
+    utter.rate = 1.0;
     utter.onend = () => setIsSpeaking(false);
     utter.onerror = () => setIsSpeaking(false);
     window.speechSynthesis.speak(utter);
     setIsSpeaking(true);
+    setIsAudioLoading(false);
   }, []);
 
   const speak = useCallback(async (text: string) => {
@@ -97,9 +106,18 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
       URL.revokeObjectURL(audioUrlRef.current);
       audioUrlRef.current = null;
     }
+    if (ttsAbortRef.current) {
+      ttsAbortRef.current.abort();
+      ttsAbortRef.current = null;
+    }
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 
     setIsSpeaking(true);
+    setIsAudioLoading(true);
+
+    // Fetch Elm TTS audio (the user wants the high-quality voice, not the OS voice)
+    const controller = new AbortController();
+    ttsAbortRef.current = controller;
     try {
       const resp = await fetch(TTS_URL, {
         method: 'POST',
@@ -108,13 +126,16 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({ text: cleaned }),
+        signal: controller.signal,
       });
       if (!resp.ok) throw new Error(`TTS HTTP ${resp.status}`);
       const blob = await resp.blob();
       if (!blob.type.startsWith('audio')) throw new Error('Invalid audio response');
+
       const url = URL.createObjectURL(blob);
       audioUrlRef.current = url;
       const audio = new Audio(url);
+      audio.preload = 'auto';
       audioRef.current = audio;
       audio.onended = () => {
         setIsSpeaking(false);
@@ -125,12 +146,18 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
       };
       audio.onerror = () => {
         setIsSpeaking(false);
-        speakBrowserFallback(cleaned);
       };
+      setIsAudioLoading(false);
       await audio.play();
     } catch (err) {
-      console.warn('Elm TTS failed, falling back to browser:', err);
-      speakBrowserFallback(cleaned);
+      // Only fall back to browser TTS if Elm fails (network/quota), so users still hear something.
+      if ((err as any)?.name !== 'AbortError') {
+        console.warn('Elm TTS failed, using browser fallback:', err);
+        speakBrowserFallback(cleaned);
+      } else {
+        setIsSpeaking(false);
+        setIsAudioLoading(false);
+      }
     }
   }, [speakBrowserFallback]);
 
@@ -175,6 +202,7 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
         speak,
         stopSpeaking,
         isSpeaking,
+        isAudioLoading,
       }}
     >
       {children}

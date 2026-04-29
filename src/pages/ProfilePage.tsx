@@ -1,15 +1,30 @@
-import { useState } from 'react';
-import { ArrowRight, Star, Trophy } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { ArrowRight, Star, Trophy, Megaphone } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useUserName, usePoints } from '@/lib/useStore';
+import { useUserName, usePoints, useReferral } from '@/lib/useStore';
 import { AccessibilityButton } from '@/components/AccessibilityFab';
+import ShareInviteModal from '@/components/ShareInviteModal';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { name, saveName } = useUserName();
-  const { points } = usePoints();
+  const { points, addPoints } = usePoints();
+  const { addReferral } = useReferral();
   const [input, setInput] = useState(name);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [searchParams] = useSearchParams();
+
+  // If user came in via a referral link (?ref=...), grant the inviter's bonus once
+  useEffect(() => {
+    const ref = searchParams.get('ref');
+    if (!ref) return;
+    const seen = localStorage.getItem('ruwat_referred_by');
+    if (seen) return;
+    localStorage.setItem('ruwat_referred_by', ref);
+    const bonus = addReferral();
+    addPoints(bonus);
+  }, [searchParams, addReferral, addPoints]);
 
   const handleSave = () => {
     if (input.trim()) {
@@ -48,7 +63,7 @@ export default function ProfilePage() {
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-card rounded-2xl p-4 shadow-md border border-border grid grid-cols-2 gap-3 text-center mb-6"
+          className="bg-card rounded-2xl p-4 shadow-md border border-border grid grid-cols-2 gap-3 text-center mb-4"
         >
           <div>
             <Star size={20} className="text-heritage-brown mx-auto mb-1" />
@@ -66,8 +81,8 @@ export default function ProfilePage() {
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-card rounded-2xl p-5 shadow-sm border border-border"
+          transition={{ delay: 0.05 }}
+          className="bg-card rounded-2xl p-5 shadow-sm border border-border mb-4"
         >
           <h2 className="font-heading font-semibold text-foreground mb-3">اسم المستخدم</h2>
           <input
@@ -83,7 +98,30 @@ export default function ProfilePage() {
             حفظ
           </button>
         </motion.div>
+
+        {/* Share/invite — warm terracotta CTA, distinct from the brown header */}
+        <motion.button
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          onClick={() => setShareOpen(true)}
+          className="w-full rounded-2xl p-4 flex items-center gap-4 text-right text-primary-foreground shadow-md active:scale-[0.98] transition-transform"
+          style={{ backgroundImage: 'linear-gradient(135deg, #6E4125, #8A5128)' }}
+        >
+          <div className="w-11 h-11 rounded-2xl bg-primary-foreground/20 flex items-center justify-center flex-shrink-0">
+            <Megaphone size={20} strokeWidth={1.7} />
+          </div>
+          <div className="flex-1 text-right">
+            <h3 className="font-heading font-bold text-sm">انشر التطبيق واكسب نقاط</h3>
+            <p className="text-[11px] opacity-90 mt-0.5">
+              ٣٠ نقطة عند المشاركة + ٢٠ عن كل صديق ينضم
+            </p>
+          </div>
+          <ArrowRight size={16} className="rotate-180 opacity-90" />
+        </motion.button>
       </div>
+
+      <ShareInviteModal open={shareOpen} onClose={() => setShareOpen(false)} />
     </div>
   );
 }

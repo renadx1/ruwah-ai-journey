@@ -14,13 +14,6 @@ export interface CulturalPlace {
   entryFee: string; // رسوم الدخول
   accessible: boolean; // يدعم الاحتياجات الخاصة
   openingHours: string;
-  whyFamous?: string; // لماذا مشهور
-  activities?: string[]; // الأنشطة
-  familyFriendly?: boolean; // مناسب للعوائل
-  visitDuration?: string; // مدة الزيارة المقترحة
-  nearbyPlaces?: string[]; // أقرب أماكن
-  officialUrl?: string; // رابط رسمي
-  faqs?: { q: string; a: string }[]; // أسئلة متوقعة
 }
 
 // Riyadh popular cultural places — accurate coordinates
@@ -31,7 +24,7 @@ export const culturalPlaces: CulturalPlace[] = [
     nameEn: 'Saudi National Museum',
     district: 'حي المربع',
     description:
-      'يُعد من أبرز المتاحف في المملكة، ويضم قاعات متعددة تعرض تاريخ الجزيرة العربية منذ العصور القديمة مرورًا بالحضارات الإسلامية وحتى توحيد المملكة. يتميز بعرض القطع الأثرية والمجسمات والوسائط التفاعلية التي تجعل الزيارة تعليمية وممتعة.',
+      'أكبر متحف في المملكة العربية السعودية، يضم 8 قاعات تروي قصة الجزيرة العربية من فجر التاريخ حتى عصر التوحيد. يحتوي على آلاف القطع الأثرية والمخطوطات النادرة.',
     descriptionEn: 'The largest museum in Saudi Arabia.',
     category: 'museum',
     lat: 24.6469,
@@ -45,12 +38,6 @@ export const culturalPlaces: CulturalPlace[] = [
     entryFee: '10 ريال',
     accessible: true,
     openingHours: '9 صباحًا – 9 مساءً',
-    whyFamous: 'وجهة ثقافية رئيسية لفهم تاريخ السعودية.',
-    activities: ['جولات', 'استكشاف القاعات', 'تصوير في المسموح'],
-    familyFriendly: true,
-    visitDuration: '1-2 ساعة',
-    nearbyPlaces: ['قصر المربع', 'مركز الملك عبدالعزيز التاريخي'],
-    faqs: [{ q: 'ماذا يوجد داخله؟', a: 'يضم قاعات تاريخية وآثار وتجارب تفاعلية.' }],
   },
   {
     id: '2',
@@ -58,7 +45,7 @@ export const culturalPlaces: CulturalPlace[] = [
     nameEn: 'At-Turaif District',
     district: 'الدرعية',
     description:
-      'حي تاريخي شهير مُدرج ضمن قائمة اليونسكو للتراث العالمي، ويُعد مهد الدولة السعودية الأولى. يتميز بالعمارة النجدية التقليدية والأزقة التاريخية والقصور المبنية بالطين، ويمنح الزائر تجربة ثقافية تعكس تاريخ المنطقة.',
+      'موقع تراث عالمي مدرج في اليونسكو، كان مقرّ حكم الدولة السعودية الأولى. يشتهر بعمارته النجدية الطينية الفريدة وقصوره التاريخية.',
     descriptionEn: 'UNESCO World Heritage Site.',
     category: 'heritage',
     lat: 24.7340,
@@ -69,16 +56,9 @@ export const culturalPlaces: CulturalPlace[] = [
       'https://images.unsplash.com/photo-1578895101408-1a36b834405b?w=800&q=80',
     ],
     rating: 4.9,
-    entryFee: '75 ريال',
+    entryFee: 'يختلف حسب الموسم (يُفضّل الحجز المسبق)',
     accessible: true,
     openingHours: '4 عصرًا – 11 مساءً',
-    whyFamous: 'من أهم المواقع التاريخية في المملكة.',
-    activities: ['مشي', 'تصوير', 'جولات', 'مطاعم ومقاهٍ قريبة'],
-    familyFriendly: true,
-    visitDuration: '2-3 ساعات',
-    nearbyPlaces: ['البجيري', 'الدرعية'],
-    officialUrl: 'https://www.diriyah.sa/ar/at-turaif',
-    faqs: [{ q: 'ماذا أزور هناك؟', a: 'استكشف الحي التاريخي وتمشَّ في البجيري القريب.' }],
   },
   {
     id: '3',
@@ -86,7 +66,7 @@ export const culturalPlaces: CulturalPlace[] = [
     nameEn: 'Masmak Fortress',
     district: 'حي الديرة',
     description:
-      'حصن تاريخي بُني بالطين في قلب الرياض القديمة، ويُعد من أشهر معالم العاصمة. ارتبط بأحداث استرداد الرياض، ويحتوي اليوم على معروضات تاريخية وصور ووثائق تشرح تلك المرحلة المهمة.',
+      'حصن طيني تاريخي شهد فجر استعادة الرياض على يد الملك عبدالعزيز عام 1902م. يضم متحفًا يعرض أسلحة وصورًا ومقتنيات من تلك الحقبة.',
     descriptionEn: 'Historic mud fortress.',
     category: 'historical',
     lat: 24.6312,
@@ -100,12 +80,6 @@ export const culturalPlaces: CulturalPlace[] = [
     entryFee: 'مجاني',
     accessible: false,
     openingHours: '8 صباحًا – 9 مساءً',
-    whyFamous: 'رمز تاريخي بارز في الرياض.',
-    activities: ['جولة', 'تصوير', 'قراءة المعروضات'],
-    familyFriendly: true,
-    visitDuration: '45-60 دقيقة',
-    nearbyPlaces: ['سوق الزل', 'الثميري'],
-    faqs: [{ q: 'ما أهميته؟', a: 'يرتبط بتاريخ استرداد الرياض وتوحيد المملكة.' }],
   },
   {
     id: '4',
@@ -113,7 +87,7 @@ export const culturalPlaces: CulturalPlace[] = [
     nameEn: 'Souq Al-Zal',
     district: 'حي الديرة',
     description:
-      'من أقدم الأسواق الشعبية في الرياض، ويشتهر ببيع السجاد والمشالح والدلال والتحف والمنتجات التراثية. يتميز بأجوائه التقليدية ويُعد مكانًا مناسبًا لشراء الهدايا الشعبية والتعرف على الطابع القديم للمدينة.',
+      'أقدم أسواق الرياض الشعبية، يمتد منذ أكثر من 110 سنة. تجد فيه السجاد العربي، البخور، الأزياء التراثية، والحرف اليدوية النجدية.',
     descriptionEn: 'Oldest folk market in Riyadh.',
     category: 'market',
     lat: 24.6298,
@@ -127,20 +101,14 @@ export const culturalPlaces: CulturalPlace[] = [
     entryFee: 'مجاني',
     accessible: true,
     openingHours: '9 صباحًا – 11 مساءً',
-    whyFamous: 'من أشهر الأسواق التراثية في الرياض.',
-    activities: ['تسوق', 'تصوير', 'استكشاف'],
-    familyFriendly: true,
-    visitDuration: '1 ساعة',
-    nearbyPlaces: ['قصر المصمك', 'حي الديرة'],
-    faqs: [{ q: 'وش ألقى فيه؟', a: 'تحف وهدايا ومنتجات تراثية متنوعة.' }],
   },
   {
     id: '5',
     name: 'متحف صقر الجزيرة للطيران',
     nameEn: 'Saqr Al-Jazira Aviation Museum',
-    district: 'شرق الرياض',
+    district: 'حي الجنادرية',
     description:
-      'متحف متخصص يعرض تاريخ الطيران العسكري والمدني في المملكة، ويضم طائرات حقيقية ومعروضات وقطعًا تاريخية مرتبطة بالقوات الجوية السعودية. مناسب لمحبي الطيران والعائلات والأطفال.',
+      'يعرض تاريخ الطيران المدني والعسكري في المملكة، مع طائرات حقيقية معروضة في الهواء الطلق وقاعات تفاعلية لمحاكاة الطيران.',
     descriptionEn: 'Aviation history museum.',
     category: 'museum',
     lat: 24.9587,
@@ -151,15 +119,9 @@ export const culturalPlaces: CulturalPlace[] = [
       'https://images.unsplash.com/photo-1583373834259-46cc92173cb7?w=800&q=80',
     ],
     rating: 4.3,
-    entryFee: '15 ريال',
+    entryFee: 'مجاني',
     accessible: true,
     openingHours: '8 صباحًا – 4 عصرًا',
-    whyFamous: 'من أبرز المتاحف المتخصصة في الرياض.',
-    activities: ['جولات', 'مشاهدة الطائرات', 'تصوير'],
-    familyFriendly: true,
-    visitDuration: '1-2 ساعة',
-    nearbyPlaces: ['طرق رئيسية شرق الرياض'],
-    faqs: [{ q: 'هل فيه طائرات حقيقية؟', a: 'نعم، توجد طائرات ومعروضات متنوعة.' }],
   },
   {
     id: '6',
@@ -167,7 +129,7 @@ export const culturalPlaces: CulturalPlace[] = [
     nameEn: 'Murabba Palace',
     district: 'حي المربع',
     description:
-      'قصر تاريخي بُني في عهد الملك عبدالعزيز، ويقع ضمن مركز الملك عبدالعزيز التاريخي. يعكس أسلوب العمارة التقليدية ويضم عناصر تاريخية مهمة عن تأسيس الدولة الحديثة.',
+      'القصر الذي بناه الملك عبدالعزيز عام 1937م مقرًا لحكمه وسكنه. يجمع بين العمارة النجدية التقليدية وعناصر حديثة، ويضم اليوم متحفًا.',
     descriptionEn: 'Historic palace of King Abdulaziz.',
     category: 'historical',
     lat: 24.6464,
@@ -181,12 +143,6 @@ export const culturalPlaces: CulturalPlace[] = [
     entryFee: 'مجاني',
     accessible: true,
     openingHours: '9 صباحًا – 8 مساءً',
-    whyFamous: 'مرتبط بتاريخ الملك عبدالعزيز.',
-    activities: ['زيارة', 'تصوير', 'جولة ثقافية'],
-    familyFriendly: true,
-    visitDuration: '45 دقيقة',
-    nearbyPlaces: ['المتحف الوطني السعودي'],
-    faqs: [{ q: 'وين موقعه؟', a: 'يقع في حي المربع وسط الرياض.' }],
   },
 ];
 

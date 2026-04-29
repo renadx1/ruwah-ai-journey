@@ -11,6 +11,7 @@ interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  images?: string[]; // data URLs for previewing user-uploaded images in the bubble
 }
 
 interface Conversation {
@@ -23,36 +24,42 @@ interface Conversation {
 const STORAGE_KEY = 'ruwat_conversations';
 
 const categoryPrompts: Record<string, string> = {
-  synonyms: 'علّمني بعض المرادفات المحلية في نجد',
-  proverbs: 'احكِ لي مثلاً شعبياً نجدياً ومعناه',
-  stories: 'احكِ لي قصة تراثية من الرياض',
-  culture: 'أخبرني عن التراث الثقافي في الرياض',
+  synonyms: 'عرّفني على بعض الكلمات والمصطلحات المحلية المتداولة في هذه المنطقة',
+  proverbs: 'اذكر لي بعض الأمثال الشعبية المشهورة في هذه المنطقة',
+  stories: 'احكِ لي قصة تراثية من قصص هذه المنطقة',
+  culture: 'عرّفني على أبرز التراث الثقافي الي موجود في هذه المنطقة',
 };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rawi-chat`;
+const VISION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rawi-vision`;
 
-async function streamElmChat({
-  messages,
-  place,
-  onDelta,
-}: {
-  messages: { role: 'user' | 'assistant'; content: string }[];
-  place?: string;
-  onDelta: (chunk: string) => void;
-}) {
-  const resp = await fetch(CHAT_URL, {
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+async function streamSSE(
+  url: string,
+  body: any,
+  onDelta: (chunk: string, opts?: { replace?: boolean }) => void
+) {
+  const resp = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
     },
-    body: JSON.stringify({ messages, place }),
+    body: JSON.stringify(body),
   });
 
   if (!resp.ok || !resp.body) {
     if (resp.status === 429) throw new Error('تم تجاوز حد الطلبات. حاول بعد قليل.');
     if (resp.status === 402) throw new Error('انتهى الرصيد. يرجى إضافة رصيد.');
-    let errMsg = 'تعذّر الاتصال بنموذج علم.';
+    let errMsg = 'تعذّر الاتصال بالمساعد.';
     try {
       const j = await resp.json();
       if (j?.error) errMsg = j.error;
@@ -84,14 +91,46 @@ async function streamElmChat({
       }
       try {
         const parsed = JSON.parse(jsonStr);
-        const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-        if (content) onDelta(content);
+        const delta = parsed.choices?.[0]?.delta;
+        const replace = delta?.replace as string | undefined;
+        const content = delta?.content as string | undefined;
+        if (typeof replace === 'string') {
+          onDelta(replace, { replace: true });
+        } else if (content) {
+          onDelta(content);
+        }
       } catch {
         textBuffer = line + '\n' + textBuffer;
         break;
       }
     }
   }
+}
+
+async function streamElmChat({
+  messages,
+  place,
+  onDelta,
+}: {
+  messages: { role: 'user' | 'assistant'; content: string }[];
+  place?: string;
+  onDelta: (chunk: string, opts?: { replace?: boolean }) => void;
+}) {
+  return streamSSE(CHAT_URL, { messages, place }, onDelta);
+}
+
+async function streamVision({
+  images,
+  prompt,
+  place,
+  onDelta,
+}: {
+  images: string[];
+  prompt?: string;
+  place?: string;
+  onDelta: (chunk: string, opts?: { replace?: boolean }) => void;
+}) {
+  return streamSSE(VISION_URL, { images, prompt, place }, onDelta);
 }
 
 const categoryIconMap: Record<string, React.ReactNode> = {
@@ -105,21 +144,60 @@ const makeWelcome = (placeName: string | null): Message => ({
   id: '0',
   role: 'assistant',
   content: placeName
-    ? `أهلًا وسهلًا، أنا الراوي، مساعدك الذكي لاستكشاف ثقافة المنطقة.\nأراك مهتمًا بـ ${placeName} — اسألني أي شيء عنه!`
-    : 'أهلًا وسهلًا، أنا الراوي، مساعدك الذكي لاستكشاف ثقافة المنطقة. اختر موضوعًا أو اسألني مباشرة.',
+    ? `أهلًا وسهلًا، أنا الراوي، مساعدك الذكي لاستكشاف ثقافة ${placeName}، اختر موضوعًا أو اسألني مباشرة.`
+    : 'أهلًا وسهلًا، أنا الراوي، مساعدك الذكي لاستكشاف ثقافة المنطقة، اختر موضوعًا أو اسألني مباشرة.',
 });
 
 function loadConversations(): Conversation[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const list = JSON.parse(raw) as Conversation[];
+    // Drop placeholder image markers so we never render broken <img> tags
+    return list.map((c) => ({
+      ...c,
+      messages: (c.messages || []).map((m) => ({
+        ...m,
+        images: m.images?.filter((s) => s && s.startsWith('data:')) ,
+      })),
+    }));
   } catch {
     return [];
   }
 }
 
+// Strip heavy fields (base64 images, very long content) before persisting.
+// localStorage has ~5MB quota; data-URL images blow past it instantly.
+function sanitizeForStorage(list: Conversation[]): Conversation[] {
+  return list.map((c) => ({
+    ...c,
+    messages: c.messages.map((m) => ({
+      id: m.id,
+      role: m.role,
+      content: m.content.length > 4000 ? m.content.slice(0, 4000) + '…' : m.content,
+      images: m.images && m.images.length > 0
+        ? m.images.map(() => '__image_omitted__')
+        : undefined,
+    })),
+  }));
+}
+
 function saveConversations(list: Conversation[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  let trimmed = sanitizeForStorage(list).slice(0, 20);
+  // Retry-by-shrinking if quota is still exceeded
+  while (trimmed.length > 0) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+      return;
+    } catch (err) {
+      if ((err as any)?.name === 'QuotaExceededError' || String(err).includes('quota')) {
+        trimmed = trimmed.slice(0, Math.max(1, Math.floor(trimmed.length / 2)));
+      } else {
+        return; // give up silently on other errors
+      }
+    }
+  }
+  try { localStorage.removeItem(STORAGE_KEY); } catch {}
 }
 
 export default function RawiPage() {
@@ -196,17 +274,33 @@ export default function RawiPage() {
 
   const handleSend = async (forced?: string) => {
     const text = (forced ?? input).trim();
-    const hasFiles = attachments.length > 0;
+    const filesToSend = attachments;
+    const hasFiles = filesToSend.length > 0;
     if ((!text && !hasFiles) || isTyping) return;
-    const fileNote = hasFiles ? `\n\n📎 ${attachments.map((f) => f.name).join('، ')}` : '';
+
+    // Split: images go to vision, other files (pdf/doc) shown as note for now
+    const imageFiles = filesToSend.filter((f) => f.type.startsWith('image/'));
+    const otherFiles = filesToSend.filter((f) => !f.type.startsWith('image/'));
+
+    let imageDataUrls: string[] = [];
+    if (imageFiles.length > 0) {
+      try {
+        imageDataUrls = await Promise.all(imageFiles.map(fileToDataUrl));
+      } catch {
+        imageDataUrls = [];
+      }
+    }
+
+    const fileNote = otherFiles.length > 0
+      ? `\n\n📎 ${otherFiles.map((f) => f.name).join('، ')}`
+      : '';
+
     const userMsg: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: (text || 'أرسلت ملف للتحليل') + fileNote,
+      content: (text || (imageDataUrls.length > 0 ? 'تعرّف على هذه الصورة' : 'أرسلت ملف للتحليل')) + fileNote,
+      images: imageDataUrls.length > 0 ? imageDataUrls : undefined,
     };
-    const historyForApi = [...messages, userMsg]
-      .filter((m) => m.id !== '0')
-      .map((m) => ({ role: m.role, content: m.content }));
 
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
@@ -217,23 +311,43 @@ export default function RawiPage() {
     let acc = '';
     let firstChunk = true;
 
+    const onDelta = (chunk: string, opts?: { replace?: boolean }) => {
+      if (opts?.replace) {
+        acc = chunk;
+      } else {
+        acc += chunk;
+      }
+      if (firstChunk) {
+        firstChunk = false;
+        setIsTyping(false);
+        setMessages((prev) => [...prev, { id: assistantId, role: 'assistant', content: acc }]);
+      } else {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === assistantId ? { ...m, content: acc } : m))
+        );
+      }
+    };
+
     try {
-      await streamElmChat({
-        messages: historyForApi,
-        place: placeName || undefined,
-        onDelta: (chunk) => {
-          acc += chunk;
-          if (firstChunk) {
-            firstChunk = false;
-            setIsTyping(false);
-            setMessages((prev) => [...prev, { id: assistantId, role: 'assistant', content: acc }]);
-          } else {
-            setMessages((prev) =>
-              prev.map((m) => (m.id === assistantId ? { ...m, content: acc } : m))
-            );
-          }
-        },
-      });
+      if (imageDataUrls.length > 0) {
+        // Vision flow — uses Lovable AI Gateway (Gemini) for heritage element recognition
+        await streamVision({
+          images: imageDataUrls,
+          prompt: text || undefined,
+          place: placeName || undefined,
+          onDelta,
+        });
+      } else {
+        const historyForApi = [...messages, userMsg]
+          .filter((m) => m.id !== '0')
+          .map((m) => ({ role: m.role, content: m.content }));
+        await streamElmChat({
+          messages: historyForApi,
+          place: placeName || undefined,
+          onDelta,
+        });
+      }
+
       if (firstChunk) {
         setIsTyping(false);
         setMessages((prev) => [
@@ -277,21 +391,35 @@ export default function RawiPage() {
       return;
     }
     if (isRecording) {
-      recognitionRef.current?.stop();
+      try { recognitionRef.current?.stop(); } catch {}
       setIsRecording(false);
       return;
     }
     const rec = new SR();
     rec.lang = 'ar-SA';
-    rec.interimResults = false;
+    rec.interimResults = true;
     rec.continuous = false;
+    let finalTranscript = '';
     rec.onresult = (e: any) => {
-      const transcript = e.results[0][0].transcript;
-      setInput((prev) => (prev ? prev + ' ' + transcript : transcript));
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) finalTranscript += t;
+        else interim += t;
+      }
+      // Live update the input so the user sees the transcript as they speak
+      setInput((finalTranscript + interim).trim());
     };
-    rec.onend = () => setIsRecording(false);
+    rec.onend = () => {
+      setIsRecording(false);
+      const text = finalTranscript.trim();
+      if (text) {
+        // Auto-send the recognized text after a tiny tick so state has time to settle
+        setTimeout(() => handleSend(text), 50);
+      }
+    };
     rec.onerror = () => setIsRecording(false);
-    rec.start();
+    try { rec.start(); } catch {}
     recognitionRef.current = rec;
     setIsRecording(true);
   };
@@ -379,6 +507,18 @@ export default function RawiPage() {
                   </button>
                 )}
               </div>
+              {msg.images && msg.images.length > 0 && (
+                <div className={`mb-2 grid gap-1.5 ${msg.images.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                  {msg.images.map((src, i) => (
+                    <img
+                      key={i}
+                      src={src}
+                      alt="صورة مرفقة"
+                      className="rounded-xl max-h-48 w-full object-cover border border-border/30"
+                    />
+                  ))}
+                </div>
+              )}
               <div className="text-sm leading-relaxed whitespace-pre-line">
                 {msg.content.replace(/\*\*/g, '')}
               </div>
@@ -411,7 +551,9 @@ export default function RawiPage() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 + i * 0.05 }}
-                onClick={() => handleSend(categoryPrompts[cat.id])}
+                onClick={() => {
+                  handleSend(categoryPrompts[cat.id]);
+                }}
                 className="bg-card border border-border rounded-2xl p-3 text-right active:scale-[0.97] transition-transform shadow-sm flex items-center gap-2"
               >
                 <span className="flex-shrink-0 w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
